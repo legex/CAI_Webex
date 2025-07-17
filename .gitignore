@@ -1,0 +1,7 @@
+datamanagement/core/.env 
+.env/
+hf_cache/
+datamanagement/data/link_metadata.json
+datamanagement/data/link_metadata2.json
+datamanagement/data/link_metadata3.json
+datamanagement/data/webex_urls.json
