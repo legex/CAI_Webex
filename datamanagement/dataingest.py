@@ -1,12 +1,16 @@
 import sys
 import os
+from dotenv import load_dotenv
 
 # Set sys.path to project root: /CAI_Webex
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import json
 from db.mongo import MongoDBConn
-from config.settings import MONGO_URI, COMMUNITY_FILES, WEBEX_FILE
+from config.settings import COMMUNITY_FILES, WEBEX_FILE
+
+load_dotenv(dotenv_path=r'datamanagement\core\.env')
+MONGO_URI = os.getenv("MONGO_URI")
 
 def load_urls(files):
     seen = set()
