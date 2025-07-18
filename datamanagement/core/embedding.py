@@ -16,7 +16,7 @@ class ChunkAndEmbed(ChunkandGenerate):
         self.model = model_wrapper.model
         self.model_lock = model_wrapper.lock
 
-    def generate_embedding(self):
+    def generate_embedding(self, query = None):
         query_text, response_text = self.scraper.scrape()
 
         if not query_text or not response_text:

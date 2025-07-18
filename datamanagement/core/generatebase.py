@@ -13,5 +13,5 @@ class ChunkandGenerate(ABC):
         return self.splitter.split_text(text)
     
     @abstractmethod
-    def generate_embedding(self):
+    def generate_embedding(self, query: str = None):
         pass
