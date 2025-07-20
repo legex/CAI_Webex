@@ -1,4 +1,4 @@
-from app.services.rag_engine import RagEngine
+from apigateway.services.rag_engine import RagEngine
 
 rg = RagEngine()
 while True:
