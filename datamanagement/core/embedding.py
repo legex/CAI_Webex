@@ -1,6 +1,8 @@
 from datamanagement.core.factory import ScraperFactory
 from datamanagement.core.generatebase import ChunkandGenerate
 from datamanagement.core.embedding_model import EmbeddingModel
+import csv
+import os
 
 class ChunkAndEmbed(ChunkandGenerate):
     """
@@ -22,6 +24,8 @@ class ChunkAndEmbed(ChunkandGenerate):
         if not query_text or not response_text:
             raise ValueError("Scraping returned empty content.")
 
+        self.save_raw_text_pair(query_text, response_text)
+
         query_chunks = self.chunk_text(query_text)
         response_chunks = self.chunk_text(response_text)
 
@@ -33,3 +37,19 @@ class ChunkAndEmbed(ChunkandGenerate):
             response_embeddings = [ self.model.encode(chunk).tolist() for chunk in response_chunks ]
 
         return query_embeddings, response_embeddings, query_chunks, response_chunks
+
+
+    def save_raw_text_pair(self, query_text, response_text, csv_filepath='scraped_pairs.csv'):
+        file_exists = os.path.isfile(csv_filepath)
+        with open(csv_filepath, 'a', newline='', encoding='utf-8') as csvfile:
+            writer = csv.DictWriter(
+                csvfile,
+                fieldnames=['query_text', 'response_text'],
+                quoting=csv.QUOTE_ALL  # Quote all fields to prevent issues
+            )
+            if not file_exists:
+                writer.writeheader()
+            writer.writerow({
+                'query_text': query_text,
+                'response_text': response_text
+            })

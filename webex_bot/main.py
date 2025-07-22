@@ -10,11 +10,12 @@ import requests
 import json
 
 url = "https://webexapis.com/v1/webhooks"
+ngrok_url = ""
 
 payload = json.dumps({
   "resource": "messages",
   "event": "all",
-  "targetUrl": "https://e1bdc28f9606.ngrok-free.app/webexhook",
+  "targetUrl": f"{ngrok_url}/webexhook",
   "name": "MytestwebHook"
 })
 headers = {

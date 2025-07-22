@@ -13,9 +13,11 @@ class CommunityScraper(BaseScraper):
         accepted_solution = soup.select_one('.lia-message-body-accepted-solution-checkmark .lia-message-body-content')
         if accepted_solution:
             response = accepted_solution.get_text(strip=True)
-        elif len(message_bodies) > 1:
-            response = message_bodies[1].get_text(strip=True)
         else:
-            response = None
+            if len(message_bodies) > 1:
+                next_bodies = [body.get_text(strip=True) for body in message_bodies[1:6]]
+                response = "\n\n".join(next_bodies) if next_bodies else None
+            else:
+                response = None
 
         return query, response

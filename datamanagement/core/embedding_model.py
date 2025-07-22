@@ -8,7 +8,7 @@ class EmbeddingModel:
 
     def __init__(self):
         huggingface_login()
-        self.model = SentenceTransformer("all-MiniLM-L6-v2", cache_folder="./hf_cache")
+        self.model = SentenceTransformer("sentence-transformers/all-mpnet-base-v2", cache_folder="./hf_cache")
         self.lock = Lock()
         self.cross_en = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
 

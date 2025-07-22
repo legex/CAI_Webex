@@ -1,8 +1,6 @@
 import sys
 import os
 from dotenv import load_dotenv
-
-# Set sys.path to project root: /CAI_Webex
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import json
@@ -25,7 +23,7 @@ def load_urls(files):
 
 if __name__ == "__main__":
     final_urls = load_urls(COMMUNITY_FILES)
-
+    print(len(final_urls))
     with open(WEBEX_FILE) as f:
         webex_urls = json.load(f)
 

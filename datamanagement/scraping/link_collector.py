@@ -13,17 +13,18 @@ class LinkCollector:
     LOAD_MORE_SELECTOR = ".lia-link-navigation.load-more-button.lia-button.lia-button-primary"
     SOLVED_ICON_SELECTOR = "i.custom-thread-solved"
     COOKIE_CLOSE_SELECTOR = ".onetrust-close-btn-handler.onetrust-close-btn-ui.banner-close-button.ot-close-icon"
+    UNSOLVED_ARTICLE_SELECTOR = "article.custom-message-tile.custom-thread-unread"
 
-    def __init__(self, sources, website, driver=None):
+    def __init__(self, sources, website):
         self.website = website
         self.source = sources
-        self.driver = driver or webdriver.Chrome(options=self._default_options())
+        self.driver = webdriver.Chrome(options=self._default_options())
         self.wait = WebDriverWait(self.driver, 5)
         self.urls = set()
 
     def _default_options(self):
         options = Options()
-        options.add_argument("--headless")
+        # options.add_argument("--headless")
         options.add_argument("--disable-gpu")
         options.add_argument("start-maximized")
         return options
@@ -58,6 +59,17 @@ class LinkCollector:
         except Exception as e:
             logger.error(f"Error extracting solved link: {e}")
 
+    def _extract_href_from_unsolved_article(self, article):
+        """Get thread URL given an unsolved (unread) article element."""
+        try:
+            h3 = article.find_element(By.TAG_NAME, "h3")
+            a_tag = h3.find_element(By.TAG_NAME, "a")
+            href = a_tag.get_attribute("href")
+            if href:
+                self.urls.add(href)
+        except Exception as e:
+            logger.error(f"Error extracting unsolved link: {e}")
+
     def scrape_website_community(self, max_pages=100):
         logger.info("Starting community site scrape...")
         self.driver.get(self.website)
@@ -70,6 +82,7 @@ class LinkCollector:
                     logger.info("No more items to load.")
                     break
                 pages_clicked += 1
+                print(f"Total number of pages: {pages_clicked}")
             except TimeoutException:
                 logger.warning("Load More button not found or timed out.")
                 break
@@ -78,7 +91,12 @@ class LinkCollector:
         for icon in solved_icons:
             self._extract_href_from_icon(icon)
 
-        logger.info(f"Collected {len(self.urls)} solved thread links.")
+        unsolved_articles = self.driver.find_elements(By.CSS_SELECTOR, self.UNSOLVED_ARTICLE_SELECTOR)
+        for article in unsolved_articles:
+            self._extract_href_from_unsolved_article(article)
+        logger.info(f"Collected {len(unsolved_articles)} unsolved (unread-thread) links.")
+
+        logger.info(f"Total unique thread links collected: {len(self.urls)}")
         return list(self.urls)
 
     def close(self):

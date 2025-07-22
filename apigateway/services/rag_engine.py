@@ -4,6 +4,7 @@ import os
 import logging
 import pymongo.errors
 from dotenv import load_dotenv
+import json
 from langchain_ollama import OllamaLLM
 from langchain.prompts import ChatPromptTemplate
 from datamanagement.db.vector_query import VectorSearch
@@ -42,6 +43,26 @@ class RagEngine:
         """Builds a context string from the top reranked chunks."""
         technical_docs = [chunk['response_chunk'] for chunk in top_chunks]
         return "\n\n".join(technical_docs)
+    
+    def get_full_threads(self, reranked_chunks: List[Dict[str, Any]]) -> Dict[str, str]:
+        """
+        For a set of reranked chunks, get *all* response_chunks for each unique thread_url,
+        and aggregate them as a single string per thread.
+        Returns: dict mapping thread_url → concatenated thread text.
+        """
+        thread_urls = {chunk['thread_url'] for chunk in reranked_chunks}
+        all_thread_chunks = {
+            url: list(self.vec_search.collection.find(
+                {"thread_url": url},
+                {"_id": 0, "response_chunk": 1}
+            ))
+            for url in thread_urls
+        }
+        return {
+            url: "\n\n".join(chunk['response_chunk'] for chunk in chunks)
+            for url, chunks in all_thread_chunks.items()
+        }
+
 
     def generate_response(self, query: str) -> str:
         """
@@ -62,7 +83,15 @@ class RagEngine:
                 return "No relevant documents found."
 
             top_chunks = self.rerank_results(query, search_results)
-            context = self.build_context(top_chunks)
+            threads_map = self.get_full_threads(top_chunks)
+            if threads_map:
+                context = list(threads_map.values())[0]
+                with open("threadmap.json", 'w') as f:
+                    json.dump(context, f)
+                print(f"Thread map found")
+
+            else:
+                context = self.build_context(top_chunks)
 
             response = self.chain.invoke({"technical_docs": context, "question": query})
             return response

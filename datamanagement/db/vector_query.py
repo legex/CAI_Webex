@@ -109,7 +109,7 @@ class VectorSearch(DBBase):
             "$vectorSearch": {
                     "queryVector": embedded_query,
                     "path": "response_embedding",
-                    "numCandidates": 100,
+                    "numCandidates": 500,
                     "limit": self.top_k_vector,
                     "index": "vector_index"  # Replace with actual index name
                 }
