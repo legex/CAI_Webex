@@ -64,7 +64,8 @@ class RagEngine:
         self.vec_search = VectorSearch(
             loginurl=self.mongo_uri,
             database=self.database,
-            collection=self.collection
+            collection=self.collection,
+            verbose=False
         )
         self.model = OllamaLLM(model=model_name, temperature=temperature)
         prompt = ChatPromptTemplate.from_template(TEMPLATE)
@@ -116,14 +117,6 @@ class RagEngine:
             key=lambda url: self.is_authoritative_url(url),
             reverse=True
         )
-
-        try:
-            with open("collected_thread_urls.txt", "w", encoding="utf-8") as f:
-                for url in sorted_thread_urls:
-                    f.write(url + "\n")
-        except Exception as e:
-            logger.warning(f"Failed to write collected_thread_urls.txt: {e}")
-
         reranked_map = {url: [] for url in thread_urls}
         for chunk in reranked_chunks:
             url = chunk['thread_url']
@@ -170,11 +163,6 @@ class RagEngine:
 
             if thread_contexts:
                 context = "\n\n".join([ctx for ctx in thread_contexts.values() if ctx.strip()])
-                try:
-                    with open("threadmap.json", "w", encoding="utf-8") as f:
-                        json.dump(context, f, ensure_ascii=False)
-                except Exception as e:
-                    logger.warning(f"Failed writing threadmap.json: {e}")
             else:
                 context = self.build_context(top_chunks)
 

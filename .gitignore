@@ -7,3 +7,4 @@ datamanagement/config/__pycache__
 collected_thread_urls.txt
 thread_urls.json
 threadmap.json
+datamanagement/log
