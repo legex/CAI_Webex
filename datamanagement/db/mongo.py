@@ -1,15 +1,50 @@
 from datamanagement.core.embedding import ChunkAndEmbed
 from datamanagement.db.db_base import DBBase
+from datamanagement.core.logger import setup_logger
+
+logger = setup_logger('mongodb_conn', 'datamanagement/log/mongodb_conn.log')
 
 class MongoDBConn(DBBase):
-    def __init__(self, loginurl, source=None, weburl=None, database='', collection='', verbose=True):
+    """
+    MongoDB connection handler for inserting chunked and embedded documents into MongoDB.
+
+    Extends DBBase for MongoDB connection and collection handling.
+    Uses ChunkAndEmbed to generate text chunks and embeddings.
+    """
+    def __init__(self, loginurl,
+                 source=None, weburl=None,
+                 database='', collection='',
+                 verbose=True
+                 ):
+        """
+        Initialize MongoDBConn with source info, list of URLs, and verbosity.
+
+        Args:
+            loginurl (str): MongoDB connection URI.
+            source (str, optional): Source identifier (e.g., "webex", "community").
+            weburl (list[str], optional): List of URLs to process.
+            database (str): MongoDB database name.
+            collection (str): MongoDB collection name.
+            verbose (bool, optional): If True, enables print/log output.
+        """
         super().__init__(loginurl, database, collection)
         self.source = source
         self.urls = weburl
         self.verbose = verbose
+        logger.info(f"MongoDBConn initialized for source={source} with {len(weburl) if weburl else 0} URLs.")
 
 
     def _insert_chunks(self, url, query_chunks, query_embeddings, response_chunks, response_embeddings):
+        """
+        Insert chunk-embedding document pairs into MongoDB collection.
+
+        Args:
+            url (str): Thread URL for the chunks.
+            query_chunks (List[str]): List of query text chunks.
+            query_embeddings (List[List[float]]): Corresponding embeddings for query chunks.
+            response_chunks (List[str]): List of response text chunks.
+            response_embeddings (List[List[float]]): Corresponding embeddings for response chunks.
+        """
         docs = []
         for _, (q_chunk, q_emb) in enumerate(zip(query_chunks, query_embeddings)):
             for _, (r_chunk, r_emb) in enumerate(zip(response_chunks, response_embeddings)):
@@ -22,16 +57,39 @@ class MongoDBConn(DBBase):
                     "response_embedding": r_emb,
                 })
         if docs:
-            self.mongo_collection.insert_many(docs)
-            if self.verbose:
-                print(f"Inserted {len(docs)} documents for: {url}")
+            try:
+                self.mongo_collection.insert_many(docs)
+                logger.info(f"Inserted {len(docs)} documents for URL: {url}")
+                if self.verbose:
+                    print(f"Inserted {len(docs)} documents for: {url}")
+            except Exception as e:
+                logger.error(f"Failed to insert documents for {url}: {e}")
+                if self.verbose:
+                    print(f"Failed to insert documents for {url}: {e}")
 
     def save_data_to_mongo(self):
+        """
+        Main method to save data to MongoDB.
+
+        - Checks if collection exists; creates if missing.
+        - Iterates over URLs and processes each if not already present.
+        - For each URL, scrapes and generates embeddings and chunks,
+          then inserts them into MongoDB.
+        """
         if not self._collection_exists():
             self._create_data()
+            logger.info(f"Collection '{self.collection_name}' created.")
+
+        if not self.urls:
+            logger.warning("No URLs provided to save_data_to_mongo.")
+            if self.verbose:
+                print("No URLs provided to save_data_to_mongo.")
+            return
+        
         for url in self.urls:
             try:
                 if self.mongo_collection.find_one({"thread_url": url}):
+                    logger.info(f"URL already exists in collection, skipping: {url}")
                     if self.verbose:
                         print(f"URL already exists. Skipping: {url}")
                     continue
@@ -39,4 +97,6 @@ class MongoDBConn(DBBase):
                 query_embeddings, response_embeddings, query_chunks, response_chunks = chunk_embed.generate_embedding()
                 self._insert_chunks(url, query_chunks, query_embeddings, response_chunks, response_embeddings)
             except Exception as e:
-                print(f"Update failed for {url}: {e}")
+                logger.error(f"Update failed for {url}: {e}")
+                if self.verbose:
+                    print(f"Update failed for {url}: {e}")

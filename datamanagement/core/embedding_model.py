@@ -1,6 +1,9 @@
 from threading import Lock
 from sentence_transformers import SentenceTransformer, CrossEncoder
 from datamanagement.core.utils import huggingface_login
+from datamanagement.core.logger import setup_logger
+
+logger = setup_logger('embedding_model', 'datamanagement/log/embedding_model.log')
 
 class EmbeddingModel:
     _instance = None
@@ -8,6 +11,7 @@ class EmbeddingModel:
 
     def __init__(self):
         huggingface_login()
+        logger.info("Initializing embedding and cross-encoder models")
         self.model = SentenceTransformer("sentence-transformers/all-mpnet-base-v2", cache_folder="./hf_cache")
         self.lock = Lock()
         self.cross_en = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")

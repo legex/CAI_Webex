@@ -3,6 +3,9 @@ from datamanagement.core.generatebase import ChunkandGenerate
 from datamanagement.core.embedding_model import EmbeddingModel
 import csv
 import os
+from datamanagement.core.logger import setup_logger
+
+logger = setup_logger('chunk_and_embed', 'datamanagement/log/chunk_and_embed.log')
 
 class ChunkAndEmbed(ChunkandGenerate):
     """
@@ -17,11 +20,13 @@ class ChunkAndEmbed(ChunkandGenerate):
         model_wrapper = EmbeddingModel.get_instance()
         self.model = model_wrapper.model
         self.model_lock = model_wrapper.lock
+        logger.info(f"ChunkAndEmbed initialized with source={source}, url={url}")
 
     def generate_embedding(self, query = None):
         query_text, response_text = self.scraper.scrape()
 
         if not query_text or not response_text:
+            logger.error("Scraping returned empty content.")
             raise ValueError("Scraping returned empty content.")
 
         self.save_raw_text_pair(query_text, response_text)
@@ -30,12 +35,13 @@ class ChunkAndEmbed(ChunkandGenerate):
         response_chunks = self.chunk_text(response_text)
 
         if self.verbose:
-            print(f"Generated {len(query_chunks)} query chunks, {len(response_chunks)} response chunks.")
+            logger.info(f"Generated {len(query_chunks)} query chunks, {len(response_chunks)} response chunks.")
 
         with self.model_lock:
             query_embeddings = [ self.model.encode(chunk).tolist() for chunk in query_chunks ]
             response_embeddings = [ self.model.encode(chunk).tolist() for chunk in response_chunks ]
 
+        logger.debug("Embeddings generated successfully.")
         return query_embeddings, response_embeddings, query_chunks, response_chunks
 
 

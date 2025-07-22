@@ -45,6 +45,7 @@ ollama==0.5.1
 orjson==3.10.18
 outcome==1.3.0.post0
 packaging==24.2
+pandas==2.3.1
 pillow==11.3.0
 proto-plus==1.26.1
 protobuf==6.31.1
@@ -56,7 +57,9 @@ pydantic_core==2.33.2
 PyJWT==1.7.1
 pymongo==4.13.2
 PySocks==1.7.1
+python-dateutil==2.9.0.post0
 python-dotenv==1.1.1
+pytz==2025.2
 PyYAML==6.0.2
 regex==2024.11.6
 requests==2.32.4
@@ -68,6 +71,7 @@ scipy==1.16.0
 selenium==4.30.0
 sentence-transformers==5.0.0
 setuptools==80.9.0
+six==1.17.0
 sniffio==1.3.1
 sortedcontainers==2.4.0
 soupsieve==2.7
@@ -84,6 +88,7 @@ trio==0.29.0
 trio-websocket==0.12.2
 typing-inspection==0.4.1
 typing_extensions==4.13.0
+tzdata==2025.2
 urllib3==2.3.0
 uvicorn==0.35.0
 webdriver-manager==4.0.2
