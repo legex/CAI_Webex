@@ -89,19 +89,19 @@ class VectorSearch(DBBase):
             list[float]: Query embedding vector.
         """
         if query in self._embedding_cache:
-            logger.debug(f"Using cached embedding for query: {query[:50]}...")
+            logger.debug("Using cached embedding for query: %s...", query[:50])
             if self.verbose:
                 print(f"Using cached embedding for query: {query[:50]}...")
             return self._embedding_cache[query]
         try:
             embedding = self.embedder.generate_embedding(query)
             self._embedding_cache[query] = embedding
-            logger.info(f"Generated embedding for query: {query[:50]} (embedding shape: {len(embedding)})")
+            logger.info("Generated embedding for query: %s (embedding shape: %d)", query[:50], len(embedding))
             if self.verbose:
                 print(f"Generated embedding for query: {query[:50]}...")
             return embedding
         except Exception as e:
-            logger.error(f"Error generating query embedding: {str(e)}")
+            logger.error("Error generating query embedding: %s", str(e))
             raise ValueError(f"Error generating query embedding: {str(e)}") from e
 
     def _pipeline(self, query: str):
@@ -147,18 +147,18 @@ class VectorSearch(DBBase):
         Returns:
             list of dict: Top-K candidate chunks from vector search.
         """
-        logger.info(f"Vector search started for query: '{query[:60]}'")
+        logger.info("Vector search started for query: '%s'", query[:60])
         if self.verbose:
             print(f"Performing similarity search for query: {query[:50]}...")
         try:
             results = list(self.collection.aggregate(self._pipeline(query)))
-            logger.info(f"Vector search found {len(results)} results for query: '{query[:60]}'")
+            logger.info("Vector search found %d results for query: '%s'", len(results), query[:60])
             if not results and self.verbose:
                 logger.warning("No results found from vector search.")
                 print("No results found from vector search.")
             return results
         except Exception as e:
-            logger.error(f"Vector search failed: {str(e)}")
+            logger.error("Vector search failed: %s", str(e))
             raise RuntimeError(f"Vector search failed: {str(e)}") from e
 
     def sparse_search(self, query: str, top_k: int = None) -> List[Dict[str, Any]]:
@@ -172,7 +172,7 @@ class VectorSearch(DBBase):
         Returns:
             list of dict: Top-K candidate chunks from full-text search.
         """
-        logger.info(f"Sparse text search started for query: '{query[:60]}' (top_k={top_k or self.top_k_sparse})")
+        logger.info("Sparse text search started for query: '%s' (top_k=%d)", query[:60], top_k or self.top_k_sparse)
         if top_k is None:
             top_k = self.top_k_sparse
         if self.verbose:
@@ -189,13 +189,13 @@ class VectorSearch(DBBase):
                 }
             ).sort([("score", {"$meta": "textScore"})]).limit(top_k)
             results = list(cursor)
-            logger.info(f"Sparse search returned {len(results)} results for query: '{query[:60]}'")
+            logger.info("Sparse search returned %d results for query: '%s'", len(results), query[:60])
             if not results and self.verbose:
                 logger.warning("No results found from sparse search.")
                 print("No results found from sparse search.")
             return results
         except Exception as e:
-            logger.error(f"Sparse search failed: {str(e)}")
+            logger.error("Sparse search failed: %s", str(e))
             raise RuntimeError(f"Sparse (full-text) search failed: {str(e)}") from e
 
     def rerank_results(self, query: str, results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -214,7 +214,7 @@ class VectorSearch(DBBase):
             if self.verbose:
                 print("No results to rerank.")
             return []
-        logger.info(f"Reranking {len(results)} results for query: '{query[:60]}'")
+        logger.info("Reranking %d results for query: '%s'", len(results), query[:60])
         pairs = [(query, res["response_chunk"]) for res in results]
         if self.verbose:
             print(f"Reranking {len(results)} results...")
@@ -224,10 +224,10 @@ class VectorSearch(DBBase):
             for res, score in zip(results, scores):
                 res['rerank_score'] = score
             ranked = sorted(results, key=lambda x: x["rerank_score"], reverse=True)
-            logger.info(f"Reranking complete, returning top {self.top_k_rerank} results.")
+            logger.info("Reranking complete, returning top %d results.", self.top_k_rerank)
             return ranked[:self.top_k_rerank]
         except Exception as e:
-            logger.error(f"Reranking failed: {str(e)}")
+            logger.error("Reranking failed: %s", str(e))
             raise RuntimeError(f"Reranking failed: {str(e)}") from e
 
     def hybrid_search(self, query: str) -> List[Dict[str, Any]]:
@@ -241,18 +241,17 @@ class VectorSearch(DBBase):
         Returns:
             List[Dict[str, Any]]: Top reranked candidate chunks per unique thread.
         """
-        logger.info(f"Hybrid search started for query: '{query[:60]}'")
+        logger.info("Hybrid search started for query: '%s'", query[:60])
         if self.verbose:
             print(f"Running hybrid search for query: {query[:50]}...")
         vector_results = self.similarity_search(query)
         sparse_results = self.sparse_search(query)
-        logger.debug(f"Vector results: {len(vector_results)}, Sparse results: {len(sparse_results)}")
+        logger.debug("Vector results: %d, Sparse results: %d", len(vector_results), len(sparse_results))
 
         # Collect highest-scored chunk per thread_url, considering both sources
         best_per_thread = {}
 
         def get_score(res):
-
             return res.get("rerank_score", res.get("score", 0))
 
         for res in vector_results + sparse_results:
@@ -266,9 +265,9 @@ class VectorSearch(DBBase):
                     best_per_thread[thread_url] = res
 
         combined_results = list(best_per_thread.values())
-        logger.info(f"Hybrid search deduplicated to {len(combined_results)} unique threads.")
+        logger.info("Hybrid search deduplicated to %d unique threads.", len(combined_results))
         reranked = self.rerank_results(query, combined_results)
-        logger.info(f"Hybrid search reranking complete for query: '{query[:60]}'")
+        logger.info("Hybrid search reranking complete for query: '%s'", query[:60])
         logger.debug("Hybrid search threads considered: %s", [res.get("thread_url") for res in combined_results])
         if self.verbose:
             print(
