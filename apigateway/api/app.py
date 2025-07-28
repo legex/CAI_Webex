@@ -16,13 +16,13 @@ from fastapi import FastAPI, Request
 from fastapi.responses import Response
 from apigateway.services.rag_engine import RagEngine
 from datamanagement.core.logger import setup_logger
+from apigateway.services.langgraphtool import conversation_graph
 
-
+config = {"configurable": {"thread_id": "1"}}
 logger = setup_logger('api_router', 'datamanagement/log/api_router.log')
 
 load_dotenv(r'datamanagement\core\.env')
 app = FastAPI()
-rg = RagEngine()
 api = WebexTeamsAPI(access_token=os.getenv("WEBEX_TOKEN"))
 
 # Prometheus metrics
@@ -60,7 +60,7 @@ def root():
         return {"message": "This is API router for Chatbot"}
 
 @app.post("/invoke")
-def invoke_model(request: Query):
+async def invoke_model(request: Query):
     """
     Endpoint to invoke the RAG model with a user query.
 
@@ -72,10 +72,10 @@ def invoke_model(request: Query):
     """
     REQUEST_COUNT.labels(endpoint="/invoke", method="POST").inc()
     with REQUEST_LATENCY.labels(endpoint="/invoke", method="POST").time():
-        question = request.query
-        logger.info("POST /invoke received with query: %s", question)
+        state = {"query": request.query, "context": "", "messages": []}
+        logger.info("POST /invoke received with query: %s", state["query"])
         try:
-            response = rg.generate_response(question)
+            response = await conversation_graph.ainvoke(state, config)
             logger.info("Response generated successfully for /invoke endpoint")
             return response
         except ValueError as e:
@@ -109,16 +109,16 @@ async def webhook(request: Request):
 
             message = api.messages.get(message_id)
             user_email = message.personEmail
-            user_text = message.text
+            state = {"query": message.text, "context": "", "messages": []}
 
-            logger.info("Webhook message from: %s, text: %s", user_email, user_text)
+            logger.info("Webhook message from: %s, text: %s", user_email, state["query"])
             if user_email == "localhelper@webex.bot":
                 logger.info("Ignoring bot's own message (loop prevention).")
                 return {"message": "Ignoring bot's own message"}
 
-            response = rg.generate_response(user_text)
+            response = await conversation_graph.ainvoke(state, config)
             logger.info("Responded to Webex message in room %s.", room_id)
-            api.messages.create(roomId=room_id, text=response)
+            api.messages.create(roomId=room_id, text=response["response"])
             return {"message": "Response sent"}
 
         except ValueError as e:

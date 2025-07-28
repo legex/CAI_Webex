@@ -1,5 +1,5 @@
 datamanagement/core/.env 
-.env/
+.agentr/
 hf_cache/
 datamanagement/data/
 datamanagement/config/__pycache__
@@ -10,3 +10,5 @@ threadmap.json
 datamanagement/log
 CAI_Webex.zip
 CAI_Webex/
+.vscode
+test.ipynb

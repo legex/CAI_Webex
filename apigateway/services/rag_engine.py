@@ -34,11 +34,8 @@ import os
 import re
 import pymongo.errors
 from dotenv import load_dotenv
-from langchain_ollama import OllamaLLM
-from langchain.prompts import ChatPromptTemplate
 from datamanagement.core.logger import setup_logger
 from datamanagement.db.vector_query import VectorSearch
-from apigateway.prompt.prompt import TEMPLATE
 
 
 logger = setup_logger("rag_engine", 'datamanagement/log/rag_engine.log')
@@ -52,16 +49,15 @@ class RagEngine:
     Retrieval-Augmented Generation (RAG) engine for combining hybrid search over MongoDB with LLM-based response generation.
     """
 
-    def __init__(self, database: str = 'cisco_docs', collection: str = 'dataset',
-                 model_name: str = 'mistral', temperature: float = 0.0):
+    def __init__(self, database: str = 'cisco_docs',
+                 collection: str = 'dataset',
+                 ):
         """
         Initialize the RagEngine with MongoDB connection, vector search, and LLM model.
 
         Args:
             database (str): MongoDB database name.
             collection (str): MongoDB collection name.
-            model_name (str): Name of the LLM model to use.
-            temperature (float): LLM temperature parameter.
         Raises:
             ValueError: If MONGO_URI is not set.
         """
@@ -79,13 +75,9 @@ class RagEngine:
             collection=self.collection,
             verbose=False
         )
-        self.model = OllamaLLM(model=model_name, temperature=temperature)
-        prompt = ChatPromptTemplate.from_template(TEMPLATE)
-        self.chain = prompt | self.model
 
         logger.info(
-            "Initialized RagEngine with model '%s', database '%s', collection '%s'.",
-            model_name, database, collection
+            "Initialized RagEngine for Vector Search"
         )
 
     def perform_search(self, query: str) -> List[Dict[str, Any]]:
@@ -268,8 +260,8 @@ class RagEngine:
             else:
                 context = self.build_context(top_chunks)
 
-            response = self.chain.invoke({"technical_docs": context, "question": query})
-            return response
+            #response = self.chain.invoke({"technical_docs": context, "question": query})
+            return context
 
         except pymongo.errors.ServerSelectionTimeoutError as e:
             logger.error("MongoDB server selection timeout: %s", e)
