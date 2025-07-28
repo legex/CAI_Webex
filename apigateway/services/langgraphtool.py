@@ -1,6 +1,7 @@
+import re
 from typing import TypedDict, Annotated, List
 from langchain.schema import HumanMessage, AIMessage, BaseMessage
-from langgraph.graph import StateGraph, MessagesState, START, END
+from langgraph.graph import StateGraph, START, END
 from langgraph.graph.message import add_messages
 from langgraph.checkpoint.memory import InMemorySaver
 from apigateway.services.tools import Tools
@@ -15,6 +16,7 @@ class State(TypedDict):
     response: str
     messages: Annotated[List[BaseMessage], add_messages]
     summary: str
+    user_name: str
 
 def start_node(state: State):
     # Initialize or continue message history with role-aware messages
@@ -23,7 +25,8 @@ def start_node(state: State):
         "messages": state.get("messages", []),
         "context": "",
         "summary": "",
-        "response": ""
+        "response": "",
+        "user_name": state.get("user_name", "")
     }
 
 def tool_node(state: State):
@@ -36,12 +39,23 @@ def tool_node(state: State):
         "response": state.get("response", ""),
     }
 
+def extract_name_node(state: State):
+    query = state["query"]
+    current_name = state.get("user_name", "")
+    
+    # Basic regex to extract name after "I am", "my name is" etc.
+    pattern = r"(?:i am|my name is)\s+([A-Za-z]+)"
+    match = re.search(pattern, query, re.IGNORECASE)
+    if match:
+        extracted_name = match.group(1).strip()
+        if extracted_name.lower() != current_name.lower():
+            # Update state if name changed or new
+            return {**state, "user_name": extracted_name}
+    return state
+
 async def llm_node(state: State):
-    # Append current user query as HumanMessage
     messages = state["messages"] + [HumanMessage(content=state["query"])]
-    # Generate response string from model (passing messages)
-    answer_text = await tl.llm_with_context(messages, context=state["context"])
-    # Append bot response as AIMessage
+    answer_text = await tl.llm_with_context(messages, context=state["context"], summary=state.get("summary", ""), username=state.get("user_name", ""))
     messages.append(AIMessage(content=answer_text))
     return {
         "response": answer_text,
@@ -49,16 +63,15 @@ async def llm_node(state: State):
         "query": state["query"],
         "context": state["context"],
         "summary": state.get("summary", ""),
+        "user_name": state.get("user_name", ""),
     }
+
 
 async def smalltalk_node(state: State):
     messages = state["messages"] + [HumanMessage(content=state["query"])]
     summary = state.get("summary", "")
-    summary_message = (
-        f"This is summary of the conversation to date: {summary}\n\nExtend the summary by taking into account the new messages above:"
-        if summary else None
-    )
-    answer_text = await tl.smalltalk_tool(messages, summary=summary_message)
+    summary_message = (f"This is summary of the conversation to date: {summary}\n\nExtend the summary by taking into account the new messages above:" if summary else None)
+    answer_text = await tl.smalltalk_tool(messages, summary=summary_message, username=state.get("user_name", ""))
     messages.append(AIMessage(content=answer_text))
     return {
         "response": answer_text,
@@ -66,7 +79,9 @@ async def smalltalk_node(state: State):
         "summary": summary,
         "query": state["query"],
         "context": state.get("context", ""),
+        "user_name": state.get("user_name", ""),
     }
+
 
 def summarize_conversation(state: State):
     summary = state.get("summary", "")
@@ -96,20 +111,29 @@ def route_by_intent(state: State):
 def should_continue(state: State):
     messages = state["messages"]
     query = state.get("query", "").lower().strip()
+
     stop_words = {"bye", "goodbye", "stop", "exit", "thanks"}
+    summary_keywords = {
+        "summary", "summarize", "give me a summary", "what's the summary", "tell me the summary",
+        "provide summary", "recap"
+    }
+
     if query in stop_words or len(messages) > 20:
         return END
-    if len(messages) > 6:
+    # Summarize only on explicit user request
+    if any(keyword in query for keyword in summary_keywords):
         return "summarize_conversation"
     return "smalltalk"
 
 def passthrough_node(state: State):
     return state
 
+
 # --- Simple chain (no loops): START → start → (tool|smalltalk) → llm/smalltalk_node → summarize_conversation → END
 
 graph = StateGraph(State)
 graph.add_node("start", start_node)
+graph.add_node("extract_name", extract_name_node)
 graph.add_node("tool", tool_node)
 graph.add_node("llm", llm_node)
 graph.add_node("smalltalk", smalltalk_node)
@@ -118,7 +142,8 @@ graph.add_node("summarize_conversation", summarize_conversation)
 graph.add_node("end", lambda state: state)
 
 graph.add_edge(START, "start")
-graph.add_conditional_edges("start", route_by_intent, ["tool", "smalltalk"])
+graph.add_edge("start", "extract_name")
+graph.add_conditional_edges("extract_name", route_by_intent, ["tool", "smalltalk"])
 graph.add_edge("tool", "llm")
 graph.add_edge("llm", "should_continue")
 graph.add_edge("smalltalk", "should_continue")
