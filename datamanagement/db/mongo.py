@@ -1,3 +1,4 @@
+import pymongo.errors
 from datamanagement.core.embedding import ChunkAndEmbed
 from datamanagement.db.db_base import DBBase
 from datamanagement.core.logger import setup_logger
@@ -31,10 +32,17 @@ class MongoDBConn(DBBase):
         self.source = source
         self.urls = weburl
         self.verbose = verbose
-        logger.info(f"MongoDBConn initialized for source={source} with {len(weburl) if weburl else 0} URLs.")
+        logger.info("MongoDBConn initialized for source=%s with %d URLs.",
+                    source, len(weburl) if weburl else 0)
 
 
-    def _insert_chunks(self, url, query_chunks, query_embeddings, response_chunks, response_embeddings):
+    def _insert_chunks(self,
+                       url,
+                       query_chunks,
+                       query_embeddings,
+                       response_chunks,
+                       response_embeddings
+                       ):
         """
         Insert chunk-embedding document pairs into MongoDB collection.
 
@@ -59,11 +67,11 @@ class MongoDBConn(DBBase):
         if docs:
             try:
                 self.mongo_collection.insert_many(docs)
-                logger.info(f"Inserted {len(docs)} documents for URL: {url}")
+                logger.info("Inserted %d documents for URL: %s", len(docs), url)
                 if self.verbose:
                     print(f"Inserted {len(docs)} documents for: {url}")
-            except Exception as e:
-                logger.error(f"Failed to insert documents for {url}: {e}")
+            except pymongo.errors.PyMongoError as e:
+                logger.error("Failed to insert documents for %s: %s", url, e)
                 if self.verbose:
                     print(f"Failed to insert documents for {url}: {e}")
 
@@ -78,25 +86,32 @@ class MongoDBConn(DBBase):
         """
         if not self._collection_exists():
             self._create_data()
-            logger.info(f"Collection '{self.collection_name}' created.")
+            logger.info("Collection '%s' created.", self.collection_name)
 
         if not self.urls:
             logger.warning("No URLs provided to save_data_to_mongo.")
             if self.verbose:
                 print("No URLs provided to save_data_to_mongo.")
             return
-        
+
         for url in self.urls:
             try:
                 if self.mongo_collection.find_one({"thread_url": url}):
-                    logger.info(f"URL already exists in collection, skipping: {url}")
+                    logger.info("URL already exists in collection, skipping: %s", url)
                     if self.verbose:
                         print(f"URL already exists. Skipping: {url}")
                     continue
                 chunk_embed = ChunkAndEmbed(self.source, url, verbose=self.verbose)
                 query_embeddings, response_embeddings, query_chunks, response_chunks = chunk_embed.generate_embedding()
-                self._insert_chunks(url, query_chunks, query_embeddings, response_chunks, response_embeddings)
-            except Exception as e:
-                logger.error(f"Update failed for {url}: {e}")
+                self._insert_chunks(url, query_chunks,
+                                    query_embeddings,
+                                    response_chunks,
+                                    response_embeddings)
+            except pymongo.errors.PyMongoError as e:
+                logger.error("MongoDB error for %s: %s", url, e)
                 if self.verbose:
-                    print(f"Update failed for {url}: {e}")
+                    print(f"MongoDB error for {url}: {e}")
+            except (ValueError, TypeError) as e:
+                logger.error("Data processing error for %s: %s", url, e)
+                if self.verbose:
+                    print(f"Data processing error for {url}: {e}")

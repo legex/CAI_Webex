@@ -26,10 +26,10 @@ class DBBase:
             self.database = self.client[database]
             self.collection_name = collection
             self.collection = self.database[self.collection_name]
-            logger.info(f"Connected to MongoDB at {self.uri}, "
-                            f"database '{database}', collection '{collection}'")
+            logger.info("Connected to MongoDB at %s, database '%s', collection '%s'",
+                       self.uri, database, collection)
         except Exception as e:
-            logger.error(f"Failed to connect to MongoDB: {e}")
+            logger.error("Failed to connect to MongoDB: %s", e)
             raise
 
     @property

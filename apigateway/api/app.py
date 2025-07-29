@@ -14,7 +14,6 @@ from dotenv import load_dotenv
 from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
 from fastapi import FastAPI, Request
 from fastapi.responses import Response
-from apigateway.services.rag_engine import RagEngine
 from datamanagement.core.logger import setup_logger
 from apigateway.services.langgraphtool import conversation_graph
 

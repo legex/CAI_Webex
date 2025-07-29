@@ -4,13 +4,17 @@ from langchain.schema import HumanMessage, AIMessage, BaseMessage
 from langgraph.graph import StateGraph, START, END
 from langgraph.graph.message import add_messages
 from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.checkpoint.mongodb import AsyncMongoDBSaver
 from apigateway.services.tools import Tools
-import asyncio
+
 
 tl = Tools()
 memory = InMemorySaver()
 
 class State(TypedDict):
+    """
+    State dictionary for conversation flow in the graph.
+    """
     query: str
     context: str
     response: str
@@ -19,6 +23,15 @@ class State(TypedDict):
     user_name: str
 
 def start_node(state: State):
+    """
+    Initializes or continues the message history with role-aware messages.
+
+    Args:
+        state (State): The current state.
+
+    Returns:
+        dict: Updated state with initialized fields.
+    """
     # Initialize or continue message history with role-aware messages
     return {
         "query": state["query"],
@@ -30,6 +43,15 @@ def start_node(state: State):
     }
 
 def tool_node(state: State):
+    """
+    Retrieves context for the query using the retrieval tool.
+
+    Args:
+        state (State): The current state.
+
+    Returns:
+        dict: Updated state with retrieved context.
+    """
     context = tl.retrieval_tool(state["query"])
     return {
         "query": state["query"],
@@ -40,9 +62,18 @@ def tool_node(state: State):
     }
 
 def extract_name_node(state: State):
+    """
+    Extracts the user's name from the query if present.
+
+    Args:
+        state (State): The current state.
+
+    Returns:
+        dict: Updated state with extracted user name if found.
+    """
     query = state["query"]
     current_name = state.get("user_name", "")
-    
+
     # Basic regex to extract name after "I am", "my name is" etc.
     pattern = r"(?:i am|my name is)\s+([A-Za-z]+)"
     match = re.search(pattern, query, re.IGNORECASE)
@@ -54,8 +85,21 @@ def extract_name_node(state: State):
     return state
 
 async def llm_node(state: State):
+    """
+    Generates a technical response using the LLM with context.
+
+    Args:
+        state (State): The current state.
+
+    Returns:
+        dict: Updated state with response and messages.
+    """
     messages = state["messages"] + [HumanMessage(content=state["query"])]
-    answer_text = await tl.llm_with_context(messages, context=state["context"], summary=state.get("summary", ""), username=state.get("user_name", ""))
+    answer_text = await tl.llm_with_context(messages,
+                                            context=state["context"],
+                                            summary=state.get("summary", ""),
+                                            username=state.get("user_name", "")
+                                            )
     messages.append(AIMessage(content=answer_text))
     return {
         "response": answer_text,
@@ -68,10 +112,22 @@ async def llm_node(state: State):
 
 
 async def smalltalk_node(state: State):
+    """
+    Handles smalltalk queries and generates a response.
+
+    Args:
+        state (State): The current state.
+
+    Returns:
+        dict: Updated state with response and messages.
+    """
     messages = state["messages"] + [HumanMessage(content=state["query"])]
     summary = state.get("summary", "")
     summary_message = (f"This is summary of the conversation to date: {summary}\n\nExtend the summary by taking into account the new messages above:" if summary else None)
-    answer_text = await tl.smalltalk_tool(messages, summary=summary_message, username=state.get("user_name", ""))
+    answer_text = await tl.smalltalk_tool(messages,
+                                          summary=summary_message,
+                                          username=state.get("user_name", "")
+                                          )
     messages.append(AIMessage(content=answer_text))
     return {
         "response": answer_text,
@@ -84,6 +140,15 @@ async def smalltalk_node(state: State):
 
 
 def summarize_conversation(state: State):
+    """
+    Summarizes the conversation based on the message history.
+
+    Args:
+        state (State): The current state.
+
+    Returns:
+        dict: Updated state with summary and pruned messages.
+    """
     summary = state.get("summary", "")
     if summary:
         summary_message = (
@@ -106,9 +171,27 @@ def summarize_conversation(state: State):
     }
 
 def route_by_intent(state: State):
+    """
+    Determines the next node based on query intent (technical or smalltalk).
+
+    Args:
+        state (State): The current state.
+
+    Returns:
+        str: The next node name ("tool" or "smalltalk").
+    """
     return "tool" if tl.is_technical(state["query"]) else "smalltalk"
 
 def should_continue(state: State):
+    """
+    Decides whether to continue, summarize, or end the conversation.
+
+    Args:
+        state (State): The current state.
+
+    Returns:
+        str: The next node name or END.
+    """
     messages = state["messages"]
     query = state.get("query", "").lower().strip()
 
@@ -126,6 +209,15 @@ def should_continue(state: State):
     return "smalltalk"
 
 def passthrough_node(state: State):
+    """
+    Returns the state unchanged.
+
+    Args:
+        state (State): The current state.
+
+    Returns:
+        State: The unchanged state.
+    """
     return state
 
 
@@ -147,7 +239,11 @@ graph.add_conditional_edges("extract_name", route_by_intent, ["tool", "smalltalk
 graph.add_edge("tool", "llm")
 graph.add_edge("llm", "should_continue")
 graph.add_edge("smalltalk", "should_continue")
-graph.add_conditional_edges("should_continue", should_continue, ["smalltalk", "summarize_conversation", END])
+graph.add_conditional_edges("should_continue",
+                            should_continue,
+                            ["smalltalk", "summarize_conversation",
+                             END]
+                             )
 graph.add_edge("summarize_conversation", "smalltalk")
 graph.add_edge("smalltalk", END)
 
