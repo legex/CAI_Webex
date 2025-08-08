@@ -4,7 +4,6 @@ from langchain.schema import HumanMessage, AIMessage, BaseMessage
 from langgraph.graph import StateGraph, START, END
 from langgraph.graph.message import add_messages
 from langgraph.checkpoint.memory import InMemorySaver
-from langgraph.checkpoint.mongodb import AsyncMongoDBSaver
 from apigateway.services.tools import Tools
 
 
@@ -220,8 +219,6 @@ def passthrough_node(state: State):
     """
     return state
 
-
-# --- Simple chain (no loops): START → start → (tool|smalltalk) → llm/smalltalk_node → summarize_conversation → END
 
 graph = StateGraph(State)
 graph.add_node("start", start_node)

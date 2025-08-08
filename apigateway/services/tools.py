@@ -110,7 +110,7 @@ class Tools:
             prompt = self._returnprompt(self.prompt_technical)
             formatted_prompt = (await prompt.aformat_prompt(
                 technical_docs=context,
-                conversation_summary=summary,
+                summary=summary,
                 messages=messages,
                 username=username
             )).to_messages()
