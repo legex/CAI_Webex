@@ -31,7 +31,6 @@ def start_node(state: State):
     Returns:
         dict: Updated state with initialized fields.
     """
-    # Initialize or continue message history with role-aware messages
     return {
         "query": state["query"],
         "messages": state.get("messages", []),
@@ -79,7 +78,6 @@ def extract_name_node(state: State):
     if match:
         extracted_name = match.group(1).strip()
         if extracted_name.lower() != current_name.lower():
-            # Update state if name changed or new
             return {**state, "user_name": extracted_name}
     return state
 
@@ -157,9 +155,8 @@ def summarize_conversation(state: State):
     else:
         summary_message = "Create a summary of the conversation above:"
     messages = state["messages"] + [HumanMessage(content=summary_message)]
-    summary_text = tl.create_summary(messages)  # Returns string
+    summary_text = tl.create_summary(messages) 
 
-    # Prune message history but keep last 2 messages for context
     pruned_messages = state["messages"][-2:] if len(state["messages"]) > 2 else state["messages"]
     return {
         "summary": summary_text,
@@ -167,6 +164,7 @@ def summarize_conversation(state: State):
         "query": state.get("query", ""),
         "context": state.get("context", ""),
         "response": state.get("response", ""),
+        "user_name": state.get("user_name", "")
     }
 
 def route_by_intent(state: State):
@@ -181,44 +179,6 @@ def route_by_intent(state: State):
     """
     return "tool" if tl.is_technical(state["query"]) else "smalltalk"
 
-def should_continue(state: State):
-    """
-    Decides whether to continue, summarize, or end the conversation.
-
-    Args:
-        state (State): The current state.
-
-    Returns:
-        str: The next node name or END.
-    """
-    messages = state["messages"]
-    query = state.get("query", "").lower().strip()
-
-    stop_words = {"bye", "goodbye", "stop", "exit", "thanks"}
-    summary_keywords = {
-        "summary", "summarize", "give me a summary", "what's the summary", "tell me the summary",
-        "provide summary", "recap"
-    }
-
-    if query in stop_words or len(messages) > 20:
-        return END
-    # Summarize only on explicit user request
-    if any(keyword in query for keyword in summary_keywords):
-        return "summarize_conversation"
-    return "smalltalk"
-
-def passthrough_node(state: State):
-    """
-    Returns the state unchanged.
-
-    Args:
-        state (State): The current state.
-
-    Returns:
-        State: The unchanged state.
-    """
-    return state
-
 
 graph = StateGraph(State)
 graph.add_node("start", start_node)
@@ -226,7 +186,6 @@ graph.add_node("extract_name", extract_name_node)
 graph.add_node("tool", tool_node)
 graph.add_node("llm", llm_node)
 graph.add_node("smalltalk", smalltalk_node)
-graph.add_node("should_continue", passthrough_node)
 graph.add_node("summarize_conversation", summarize_conversation)
 graph.add_node("end", lambda state: state)
 
@@ -234,14 +193,8 @@ graph.add_edge(START, "start")
 graph.add_edge("start", "extract_name")
 graph.add_conditional_edges("extract_name", route_by_intent, ["tool", "smalltalk"])
 graph.add_edge("tool", "llm")
-graph.add_edge("llm", "should_continue")
-graph.add_edge("smalltalk", "should_continue")
-graph.add_conditional_edges("should_continue",
-                            should_continue,
-                            ["smalltalk", "summarize_conversation",
-                             END]
-                             )
-graph.add_edge("summarize_conversation", "smalltalk")
+graph.add_edge("llm", END)
 graph.add_edge("smalltalk", END)
+graph.add_edge("summarize_conversation", END)
 
 conversation_graph = graph.compile(checkpointer=memory)

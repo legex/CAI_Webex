@@ -104,6 +104,10 @@ class Tools:
         Returns:
             str: Model response or error message.
         """
+        full_conversation_text = "\n".join(
+                f"{'User' if isinstance(m, HumanMessage) else 'Assistant'}: {m.content}"
+                for m in messages
+            )
         try:
             logger.info("[llm_with_context] Messages length: %d, context length: %d",
                         len(messages), len(context) if context else 0)
@@ -111,8 +115,8 @@ class Tools:
             formatted_prompt = (await prompt.aformat_prompt(
                 technical_docs=context,
                 summary=summary,
-                messages=messages,
-                username=username
+                messages=full_conversation_text,
+                user_name=username
             )).to_messages()
             logger.debug("[llm_with_context] Prompt formatted; invoking model.")
             response = await self.model.ainvoke(formatted_prompt)
@@ -139,22 +143,25 @@ class Tools:
         Returns:
             str: Model response or error message.
         """
+        full_conversation_text = "\n".join(
+                f"{'User' if isinstance(m, HumanMessage) else 'Assistant'}: {m.content}"
+                for m in messages
+            )
         try:
             logger.info("[smalltalk_tool] Messages length: %d, Summary present: %s",
                         len(messages), 'Yes' if summary else 'No')
             prompt = self._returnprompt(self.prompt_general)
             if summary:
-                # Assume summary variable mapped correctly in your TEMPLATE_General prompt
                 formatted_prompt = (await prompt.aformat_prompt(
-                    message=messages[-1].content,
+                    messages=full_conversation_text,
                     summary=summary,
-                    username=username
+                    user_name=username
                 )).to_messages()
             else:
                 formatted_prompt = (await prompt.aformat_prompt(
-                    message=messages[-1].content,
+                    messages=full_conversation_text,
                     summary="no summary",
-                    username=username
+                    user_name=username
                 )).to_messages()
             logger.debug("[smalltalk_tool] Prompt formatted; invoking model.")
             response = await self.model.ainvoke(formatted_prompt)
@@ -218,7 +225,6 @@ class Tools:
                     logger.warning("[routed_response] No context found for technical query: %r",
                                    query)
                     return "Sorry, I could not find relevant documents for your question."
-                # Pass full messages, context, summary, user_name
                 response = await self.llm_with_context(messages,
                                                        context=context,
                                                        summary=summary,

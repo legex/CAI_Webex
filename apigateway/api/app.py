@@ -11,13 +11,22 @@ import os
 from pydantic import BaseModel
 from webexteamssdk import WebexTeamsAPI
 from dotenv import load_dotenv
-from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
+from prometheus_client import (
+    Counter,
+    Histogram,
+    generate_latest,
+    CONTENT_TYPE_LATEST
+    )
 from fastapi import FastAPI, Request
 from fastapi.responses import Response
 from datamanagement.core.logger import setup_logger
-from apigateway.services.langgraphtool import conversation_graph
+from apigateway.services.langgraphtool import (
+    conversation_graph,
+    memory,
+    summarize_conversation
+    )
+from apigateway.api.utils import get_config_with_session
 
-config = {"configurable": {"thread_id": "1"}}
 logger = setup_logger('api_router', 'datamanagement/log/api_router.log')
 
 load_dotenv(r'datamanagement\core\.env')
@@ -59,7 +68,7 @@ def root():
         return {"message": "This is API router for Chatbot"}
 
 @app.post("/invoke")
-async def invoke_model(request: Query):
+async def invoke_model(request: Query, session_id="default_session"):
     """
     Endpoint to invoke the RAG model with a user query.
 
@@ -71,7 +80,18 @@ async def invoke_model(request: Query):
     """
     REQUEST_COUNT.labels(endpoint="/invoke", method="POST").inc()
     with REQUEST_LATENCY.labels(endpoint="/invoke", method="POST").time():
-        state = {"query": request.query, "context": "", "messages": []}
+        config = get_config_with_session(session_id)
+        previous_states = memory.get(config)
+        state = previous_states[0].value if previous_states else {
+            "query": "",
+            "context": "",
+            "response": "",
+            "messages": [],
+            "summary": "",
+            "user_name": ""
+        }
+        state["query"] = request.query
+
         logger.info("POST /invoke received with query: %s", state["query"])
         try:
             response = await conversation_graph.ainvoke(state, config)
@@ -108,8 +128,23 @@ async def webhook(request: Request):
 
             message = api.messages.get(message_id)
             user_email = message.personEmail
-            state = {"query": message.text, "context": "", "messages": []}
+            config = get_config_with_session(room_id)
+            previous_states = memory.get(config)
+            if previous_states is not None:
+                state = previous_states.get('channel_values', {})
+                if len(state["messages"]) > 6:
+                    state = summarize_conversation(state)
 
+            else:
+                state = {
+                        "query": "",
+                        "context": "",
+                        "response": "",
+                        "messages": [],
+                        "summary": "",
+                        "user_name": ""
+                        }
+            state["query"] = message.text
             logger.info("Webhook message from: %s, text: %s", user_email, state["query"])
             if user_email == "localhelper@webex.bot":
                 logger.info("Ignoring bot's own message (loop prevention).")
