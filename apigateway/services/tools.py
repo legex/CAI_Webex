@@ -9,7 +9,7 @@ from langchain.prompts import ChatPromptTemplate
 from langchain.schema import BaseMessage, HumanMessage
 from apigateway.services.rag_engine import RagEngine
 from apigateway.services.modelbase import LLMModel
-from apigateway.prompt.prompt import TEMPLATE_TECHNICAL, TEMPLATE_GENERAL
+from apigateway.prompt.prompt import TEMPLATE_TECHNICAL, TEMPLATE_GENERAL, TEMPLATE_SUMMARY
 from datamanagement.core.logger import setup_logger
 
 
@@ -26,6 +26,7 @@ class Tools:
         self.model = _model_wraper.get_model()
         self.prompt_technical = TEMPLATE_TECHNICAL
         self.prompt_general = TEMPLATE_GENERAL
+        self.promt_summary = TEMPLATE_SUMMARY
         self.rg = RagEngine()
         logger.info("Tools class initialized with LLMModel and RagEngine.")
 
@@ -174,7 +175,7 @@ class Tools:
             logger.debug("%s", traceback.format_exc())
             return "Sorry, I'm having trouble chatting right now."
 
-    def create_summary(self,
+    async def create_summary(self,
                        summary_messages: List[BaseMessage]
                        ) -> str:
         """
@@ -187,8 +188,11 @@ class Tools:
             str: Generated summary or error message.
         """
         try:
+            prompt = self._returnprompt(self.promt_summary)
+            formatted_prompt = (await prompt.aformat_prompt(messages = summary_messages
+                )).to_messages()
             logger.info("[create_summary] Called with %d messages", len(summary_messages))
-            result = self.model.invoke(summary_messages)
+            result = await self.model.ainvoke(formatted_prompt)
             logger.info("[create_summary] Summary generated with length %s",
                         len(result) if isinstance(result, str) else 'N/A')
             return result

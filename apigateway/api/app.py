@@ -130,22 +130,7 @@ async def webhook(request: Request):
             message = api.messages.get(message_id)
             user_email = message.personEmail
             config = get_config_with_session(room_id)
-            previous_states = None
-            if previous_states is not None:
-                state = previous_states.get('channel_values', {})
-                # if len(state["messages"]) > 6:
-                #     state = summarize_conversation(state)
-
-            else:
-                state = {
-                        "query": "",
-                        "context": "",
-                        "response": "",
-                        "messages": [],
-                        "summary": "",
-                        "user_name": ""
-                        }
-            state["query"] = message.text
+            state = {"query":message.text}
             logger.info("Webhook message from: %s, text: %s", user_email, state["query"])
             if user_email == "localhelper@webex.bot":
                 logger.info("Ignoring bot's own message (loop prevention).")

@@ -137,7 +137,7 @@ async def smalltalk_node(state: State):
     }
 
 
-def summarize_conversation(state: State):
+async def summarize_conversation(state: State):
     """
     Summarizes the conversation based on the message history.
 
@@ -156,7 +156,7 @@ def summarize_conversation(state: State):
     else:
         summary_message = "Create a summary of the conversation above:"
     messages = state["messages"] + [HumanMessage(content=summary_message)]
-    summary_text = tl.create_summary(messages)
+    summary_text = await tl.create_summary(messages)
 
     pruned_messages = [RemoveMessage(id=m.id) for m in state["messages"][:-2]]
     return {
