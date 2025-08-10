@@ -9,7 +9,7 @@ from langchain.prompts import ChatPromptTemplate
 from langchain.schema import BaseMessage, HumanMessage
 from apigateway.services.rag_engine import RagEngine
 from apigateway.services.modelbase import LLMModel
-from apigateway.prompt.prompt import TEMPLATE_Technical, TEMPLATE_General
+from apigateway.prompt.prompt import TEMPLATE_TECHNICAL, TEMPLATE_GENERAL
 from datamanagement.core.logger import setup_logger
 
 
@@ -24,8 +24,8 @@ class Tools:
         """
         _model_wraper = LLMModel.get_instance()
         self.model = _model_wraper.get_model()
-        self.prompt_technical = TEMPLATE_Technical
-        self.prompt_general = TEMPLATE_General
+        self.prompt_technical = TEMPLATE_TECHNICAL
+        self.prompt_general = TEMPLATE_GENERAL
         self.rg = RagEngine()
         logger.info("Tools class initialized with LLMModel and RagEngine.")
 
@@ -148,8 +148,9 @@ class Tools:
                 for m in messages
             )
         try:
+            has_summary = bool((summary or "").strip())
             logger.info("[smalltalk_tool] Messages length: %d, Summary present: %s",
-                        len(messages), 'Yes' if summary else 'No')
+                        len(messages), 'Yes' if has_summary else 'No')
             prompt = self._returnprompt(self.prompt_general)
             if summary:
                 formatted_prompt = (await prompt.aformat_prompt(

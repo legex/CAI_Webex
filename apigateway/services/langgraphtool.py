@@ -1,8 +1,9 @@
 import re
 from typing import TypedDict, Annotated, List
 from langchain.schema import HumanMessage, AIMessage, BaseMessage
-from langgraph.graph import StateGraph, START, END
+from langchain_core.messages import RemoveMessage
 from langgraph.graph.message import add_messages
+from langgraph.graph import END
 from langgraph.checkpoint.memory import InMemorySaver
 from apigateway.services.tools import Tools
 
@@ -35,7 +36,7 @@ def start_node(state: State):
         "query": state["query"],
         "messages": state.get("messages", []),
         "context": "",
-        "summary": "",
+        "summary": state.get("summary", ""),
         "response": "",
         "user_name": state.get("user_name", "")
     }
@@ -81,7 +82,7 @@ def extract_name_node(state: State):
             return {**state, "user_name": extracted_name}
     return state
 
-async def llm_node(state: State):
+async def rag_invoke_node(state: State):
     """
     Generates a technical response using the LLM with context.
 
@@ -119,7 +120,7 @@ async def smalltalk_node(state: State):
         dict: Updated state with response and messages.
     """
     messages = state["messages"] + [HumanMessage(content=state["query"])]
-    summary = state.get("summary", "")
+    summary = state.get("summary") or ""
     summary_message = (f"This is summary of the conversation to date: {summary}\n\nExtend the summary by taking into account the new messages above:" if summary else None)
     answer_text = await tl.smalltalk_tool(messages,
                                           summary=summary_message,
@@ -155,9 +156,9 @@ def summarize_conversation(state: State):
     else:
         summary_message = "Create a summary of the conversation above:"
     messages = state["messages"] + [HumanMessage(content=summary_message)]
-    summary_text = tl.create_summary(messages) 
+    summary_text = tl.create_summary(messages)
 
-    pruned_messages = state["messages"][-2:] if len(state["messages"]) > 2 else state["messages"]
+    pruned_messages = [RemoveMessage(id=m.id) for m in state["messages"][:-2]]
     return {
         "summary": summary_text,
         "messages": pruned_messages,
@@ -179,22 +180,13 @@ def route_by_intent(state: State):
     """
     return "tool" if tl.is_technical(state["query"]) else "smalltalk"
 
+def should_summarize(state: State):
+    messages = state["messages"]
 
-graph = StateGraph(State)
-graph.add_node("start", start_node)
-graph.add_node("extract_name", extract_name_node)
-graph.add_node("tool", tool_node)
-graph.add_node("llm", llm_node)
-graph.add_node("smalltalk", smalltalk_node)
-graph.add_node("summarize_conversation", summarize_conversation)
-graph.add_node("end", lambda state: state)
+    if len(messages) > 6:
+        return "summarize_conversation"
+    
+    return END
 
-graph.add_edge(START, "start")
-graph.add_edge("start", "extract_name")
-graph.add_conditional_edges("extract_name", route_by_intent, ["tool", "smalltalk"])
-graph.add_edge("tool", "llm")
-graph.add_edge("llm", END)
-graph.add_edge("smalltalk", END)
-graph.add_edge("summarize_conversation", END)
-
-conversation_graph = graph.compile(checkpointer=memory)
+async def connector_node(state: State):
+    return {}

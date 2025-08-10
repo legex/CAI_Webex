@@ -20,11 +20,12 @@ from prometheus_client import (
 from fastapi import FastAPI, Request
 from fastapi.responses import Response
 from datamanagement.core.logger import setup_logger
-from apigateway.services.langgraphtool import (
-    conversation_graph,
-    memory,
-    summarize_conversation
-    )
+# from apigateway.services.langgraphtool import (
+#     conversation_graph,
+#     memory,
+#     summarize_conversation
+#     )
+from apigateway.services.generate_response import get_response
 from apigateway.api.utils import get_config_with_session
 
 logger = setup_logger('api_router', 'datamanagement/log/api_router.log')
@@ -81,8 +82,8 @@ async def invoke_model(request: Query, session_id="default_session"):
     REQUEST_COUNT.labels(endpoint="/invoke", method="POST").inc()
     with REQUEST_LATENCY.labels(endpoint="/invoke", method="POST").time():
         config = get_config_with_session(session_id)
-        previous_states = memory.get(config)
-        state = previous_states[0].value if previous_states else {
+        #previous_states = memory.get(config)
+        state = {
             "query": "",
             "context": "",
             "response": "",
@@ -94,7 +95,7 @@ async def invoke_model(request: Query, session_id="default_session"):
 
         logger.info("POST /invoke received with query: %s", state["query"])
         try:
-            response = await conversation_graph.ainvoke(state, config)
+            response = await get_response(state, config)
             logger.info("Response generated successfully for /invoke endpoint")
             return response
         except ValueError as e:
@@ -129,11 +130,11 @@ async def webhook(request: Request):
             message = api.messages.get(message_id)
             user_email = message.personEmail
             config = get_config_with_session(room_id)
-            previous_states = memory.get(config)
+            previous_states = None
             if previous_states is not None:
                 state = previous_states.get('channel_values', {})
-                if len(state["messages"]) > 6:
-                    state = summarize_conversation(state)
+                # if len(state["messages"]) > 6:
+                #     state = summarize_conversation(state)
 
             else:
                 state = {
@@ -150,9 +151,9 @@ async def webhook(request: Request):
                 logger.info("Ignoring bot's own message (loop prevention).")
                 return {"message": "Ignoring bot's own message"}
 
-            response = await conversation_graph.ainvoke(state, config)
+            response = await get_response(state, config)
             logger.info("Responded to Webex message in room %s.", room_id)
-            api.messages.create(roomId=room_id, text=response["response"])
+            api.messages.create(roomId=room_id, text=response)
             return {"message": "Response sent"}
 
         except ValueError as e:
