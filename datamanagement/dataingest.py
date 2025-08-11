@@ -31,18 +31,16 @@ if __name__ == "__main__":
     community = MongoDBConn(
         loginurl=MONGO_URI,
         source="community",
-        weburl=final_urls,
         database="cisco_docs",
         collection="dataset"
     )
-    community.save_data_to_mongo()
+    community.save_data_to_mongo_web(weburl=final_urls)
 
     print("Saving webex articles...")
     webex = MongoDBConn(
         loginurl=MONGO_URI,
         source="webex",
-        weburl=webex_urls,
         database="cisco_docs",
         collection="dataset"
     )
-    webex.save_data_to_mongo()
+    webex.save_data_to_mongo_web(weburl=final_urls)

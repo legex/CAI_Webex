@@ -1,7 +1,10 @@
+import glob
 import pymongo.errors
+from langchain_community.document_loaders import PyPDFLoader
 from datamanagement.core.embedding import ChunkAndEmbed
-from datamanagement.db.db_base import DBBase
+from datamanagement.core.pdfembeddings import PDFEmbed
 from datamanagement.core.logger import setup_logger
+from datamanagement.db.db_base import DBBase
 
 logger = setup_logger('mongodb_conn', 'datamanagement/log/mongodb_conn.log')
 
@@ -13,7 +16,7 @@ class MongoDBConn(DBBase):
     Uses ChunkAndEmbed to generate text chunks and embeddings.
     """
     def __init__(self, loginurl,
-                 source=None, weburl=None,
+                 source=None,
                  database='', collection='',
                  verbose=True
                  ):
@@ -30,10 +33,8 @@ class MongoDBConn(DBBase):
         """
         super().__init__(loginurl, database, collection)
         self.source = source
-        self.urls = weburl
         self.verbose = verbose
-        logger.info("MongoDBConn initialized for source=%s with %d URLs.",
-                    source, len(weburl) if weburl else 0)
+        logger.info("MongoDBConn initialized for source %s.", self.source)
 
 
     def _insert_chunks(self,
@@ -75,7 +76,7 @@ class MongoDBConn(DBBase):
                 if self.verbose:
                     print(f"Failed to insert documents for {url}: {e}")
 
-    def save_data_to_mongo(self):
+    def save_data_to_mongo_web(self, weburl: list):
         """
         Main method to save data to MongoDB.
 
@@ -88,13 +89,13 @@ class MongoDBConn(DBBase):
             self._create_data()
             logger.info("Collection '%s' created.", self.collection_name)
 
-        if not self.urls:
+        if not weburl:
             logger.warning("No URLs provided to save_data_to_mongo.")
             if self.verbose:
                 print("No URLs provided to save_data_to_mongo.")
             return
 
-        for url in self.urls:
+        for url in weburl:
             try:
                 if self.mongo_collection.find_one({"thread_url": url}):
                     logger.info("URL already exists in collection, skipping: %s", url)
@@ -115,3 +116,52 @@ class MongoDBConn(DBBase):
                 logger.error("Data processing error for %s: %s", url, e)
                 if self.verbose:
                     print(f"Data processing error for {url}: {e}")
+
+    def save_to_mongo_pdf(self, source_folder):
+        if not self._collection_exists():
+            self._create_data()
+            logger.info("Collection '%s' created.", self.collection_name)
+
+        pdf_files = glob.glob(f"{source_folder}\\*.pdf")
+        if not pdf_files:
+            logger.warning("No PDF files found in %s", source_folder)
+            if self.verbose:
+                print(f"No PDF files found in {source_folder}")
+            return
+        
+        for pdf_path in pdf_files:
+            try:
+                if self.mongo_collection.find_one({"thread_url": pdf_path}):
+                    logger.info("PDF already exists in collection, skipping: %s", pdf_path)
+                    if self.verbose:
+                        print(f"PDF already exists, skipping: {pdf_path}")
+                    continue
+
+                loader = PyPDFLoader(pdf_path)
+                pages = loader.load()
+                if not pages:
+                    logger.warning("No content in PDF: %s", pdf_path)
+                    continue
+                query_text = pages[0].page_content.strip()
+                response_text = ""
+                if len(pages) > 1:
+                    response_text = "\n\n".join(p.page_content.strip() for p in pages[1:])
+
+                if not query_text or not response_text:
+                    logger.warning("Skipping %s: missing query or response text", pdf_path)
+                    continue
+                embedder = PDFEmbed(source=self.source, url=pdf_path, verbose=self.verbose)
+                query_embs, response_embs, query_chunks, response_chunks = embedder.generate_embedding(
+                    query=query_text,
+                    response_text=response_text
+                )
+                self._insert_chunks(pdf_path, query_chunks, query_embs, response_chunks, response_embs)
+
+            except pymongo.errors.PyMongoError as e:
+                logger.error("MongoDB error for %s: %s", pdf_path, e)
+                if self.verbose:
+                    print(f"MongoDB error for {pdf_path}: {e}")
+            except Exception as e:
+                logger.error("Error processing PDF %s: %s", pdf_path, e)
+                if self.verbose:
+                    print(f"Error processing PDF {pdf_path}: {e}")

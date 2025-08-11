@@ -11,14 +11,16 @@ class ChunkandGenerate(ABC):
             chunk_overlap=100,
             separators=["\n\n", "\n", ".", " "]
         )
-        logger.info("Initialized the RecursiveCharacterTextSplitter with "
-                    f"chunk_size=500, chunk_overlap=100")
-                
+        logger.info(
+            "Initialized the RecursiveCharacterTextSplitter with chunk_size=%d, chunk_overlap=%d",
+            500,
+            100)
+          
     def chunk_text(self, text: str):
-        logger.debug(f"Chunking text of length {len(text)}")
+        logger.debug("Chunking text of length %d", len(text))
         return self.splitter.split_text(text)
-    
+
     @abstractmethod
-    def generate_embedding(self, query: str = None):
+    def generate_embedding(self, query: str = None, response_text: str = None):
         logger.warning("Abstract method 'generate_embedding' not implemented")
         pass

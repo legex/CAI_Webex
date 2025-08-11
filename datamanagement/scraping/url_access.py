@@ -36,11 +36,11 @@ class URLAccess:
     }
 
     href_patterns = {
-        'community': r'^/t5/webex-',
+        'community': r'^/c/en/us',
         'webex': r'^/en-us/(article/|[\w-]+$)'
     }
 
-    def __init__(self, source: str, url: str):
+    def __init__(self, source: str):
         """
         Initialize URLAccess with a source and the target URL to parse.
 
@@ -56,12 +56,10 @@ class URLAccess:
             logger.error(f"Unsupported source specified: {source}")
             raise ValueError(f"Unsupported source: {source}")
         self.source = source
-        self.url = url
         self.links = []
-        self.soup = self._fetch_html()
-        logger.info(f"Initialized URLAccess for {source} at {url}")
+        logger.info(f"Initialized URLAccess for {source}")
 
-    def _fetch_html(self):
+    def _fetch_html(self, url: str):
         """
         Uses sslbypass to get a session and fetch HTML content from self.url.
 
@@ -73,31 +71,35 @@ class URLAccess:
         """
         try:
             session = sslbypass.get_legacy_session()
-            response = session.get(self.url)
+            response = session.get(url)
             if response.status_code == 200 and 'text/html' in response.headers.get('Content-Type', ''):
-                logger.info(f"Successfully fetched HTML content from {self.url}")
+                logger.info(f"Successfully fetched HTML content from {url}")
                 return BeautifulSoup(response.text, 'html.parser')
             else:
-                msg = f"Failed retrieving HTML from {self.url} " \
+                msg = f"Failed retrieving HTML from {url} " \
                       f"(Status code: {response.status_code}, Content-Type: {response.headers.get('Content-Type')})"
                 logger.error(msg)
                 raise ConnectionError(msg)
         except Exception as exc:
-            logger.error(f"Exception during HTTP GET for {self.url}: {exc}")
+            logger.error(f"Exception during HTTP GET for {url}: {exc}")
             raise
 
-    def linksparsed(self) -> list:
+    def _soup(self, url):
+        return self._fetch_html(url)
+
+    def linksparsed(self, url) -> list:
         """
         Parse and extract filtered absolute links from the fetched HTML content.
 
         Returns:
             list: Unique list of filtered absolute URLs related to the source context.
         """
+        soup = self._fetch_html(url)
         try:
             raw_links = []
             base_url = self.base_urls[self.source][0]
             pattern = self.href_patterns[self.source]
-            for a_tag in self.soup.find_all('a', href=re.compile(pattern)):
+            for a_tag in soup.find_all('a', href=re.compile(pattern)):
                 href = a_tag.get('href')
                 if href:
                     full_url = urljoin(base_url, href)
@@ -107,17 +109,17 @@ class URLAccess:
             all_links = list(set(filter(lambda link: link not in self.base_urls[self.source], raw_links)))
 
             self.links = all_links
-            logger.info(f"Parsed {len(all_links)} unique links from {self.url}")
+            logger.info(f"Parsed {len(all_links)} unique links from {url}")
             return all_links
         except Exception as exc:
-            logger.error(f"Failed during parsing links from {self.url}: {exc}")
+            logger.error(f"Failed during parsing links from {url}: {exc}")
             raise
 
-    def content(self) -> BeautifulSoup:
+    def content(self, url) -> BeautifulSoup:
         """
         Get the parsed BeautifulSoup HTML content.
 
         Returns:
             BeautifulSoup: Parsed HTML content object.
         """
-        return self.soup
+        return self._fetch_html(url)

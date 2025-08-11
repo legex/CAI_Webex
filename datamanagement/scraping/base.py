@@ -45,7 +45,7 @@ class BaseScraper(ABC):
         """
         try:
             logger.debug(f"Fetching content for URL {self.url}")
-            content = URLAccess(self.source, self.url).content()
+            content = URLAccess(self.source).content(self.url)
             logger.info(f"Content successfully fetched for URL {self.url}")
             return content
         except Exception as e:

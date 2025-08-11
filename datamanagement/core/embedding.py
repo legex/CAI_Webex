@@ -22,14 +22,14 @@ class ChunkAndEmbed(ChunkandGenerate):
         self.model_lock = model_wrapper.lock
         logger.info(f"ChunkAndEmbed initialized with source={source}, url={url}")
 
-    def generate_embedding(self, query = None):
+    def generate_embedding(self, query = None, response_text = None):
         query_text, response_text = self.scraper.scrape()
 
         if not query_text or not response_text:
             logger.error("Scraping returned empty content.")
             raise ValueError("Scraping returned empty content.")
 
-        self.save_raw_text_pair(query_text, response_text)
+        #self.save_raw_text_pair(query_text, response_text)
 
         query_chunks = self.chunk_text(query_text)
         response_chunks = self.chunk_text(response_text)

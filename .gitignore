@@ -12,3 +12,5 @@ CAI_Webex.zip
 CAI_Webex/
 .vscode
 test.ipynb
+generation.py
+test_initial_codes.py

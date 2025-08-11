@@ -66,7 +66,10 @@ class RagEngine:
         if not self.mongo_uri:
             logger.error("MONGO_URI must be set in .env file.")
             raise ValueError("MONGO_URI must be set in .env file.")
-
+        self.tavily_apikey = os.getenv("TAVILY_API_KEY")
+        if not self.tavily_apikey:
+            logger.error("TAVILY API KEY must be set in .env file.")
+            raise ValueError("TAVILY API KEY must be set in .env file.")
         self.database = database
         self.collection = collection
         self.vec_search = VectorSearch(
@@ -259,7 +262,7 @@ class RagEngine:
                 context = "\n\n".join([ctx for ctx in thread_contexts.values() if ctx.strip()])
             else:
                 context = self.build_context(top_chunks)
-
+            logger.info("Here is context for internal logging: %s", context)
             #response = self.chain.invoke({"technical_docs": context, "question": query})
             return context
 

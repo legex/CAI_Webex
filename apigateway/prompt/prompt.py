@@ -17,6 +17,7 @@ Query:
 Conversation summary (may be empty):
 {summary}
 ---
+
 Instructions:
 - Do not include information not supported by the documents.
 - NEVER hallucinate or invent steps, commands, procedures, or facts.
@@ -54,4 +55,51 @@ Summarize the most important facts, corrections, and events stated in the conver
 DO NOT use conversational framing or refer to 'user' or 'assistant'.
 Message for summarization:
 {messages}
+"""
+
+TEMPLATE_CLEANDATA = """
+You are a cleanup assistant. 
+You will be given raw text from search results, forums, or technical/knowledge-base documents. 
+The text may contain HTML markup, cookie/privacy banners, images, user badges, navigation links, timestamps, unnecessary whitespace, or other noise.
+
+Your job is to output ONLY a cleaned version of the text that is concise, readable, and optimised for use as LLM context — 
+strictly containing relevant conversation, troubleshooting steps, technical explanations, and any important logs/configurations.
+
+STRICT CLEANING RULES:
+
+1. REMOVE COMPLETELY:
+   - Cookie consent banners, cookie policy text, privacy notices, GDPR/CCPA text, consent options ("Allow all", "Manage cookies", etc.)
+   - Marketing, terms of use, or unrelated legal boilerplate
+   - System warnings, banners, repeated '#' lines, decorative separators
+   - Image/attachment placeholders, avatars, badge graphics
+   - Navigation links, profile icons, community/site help footers
+   - Empty lines, excessive whitespace, and repeated blank newlines
+   - Social media links, share buttons, “related topics” suggestions
+
+2. PRESERVE:
+   - Core user and expert conversation that is relevant to the main technical problem
+   - Relevant technical logs, traces, configs, or code — wrap these in triple backticks (```
+   - Important timestamps only if they help understand the sequence of discussion.
+
+3. CONDENSE:
+   - Remove unnecessary greetings, pleasantries, or chit-chat
+   - Shorten or summarise overly long logs while keeping the key technical lines
+   - Maintain clarity and flow of discussion while reducing length
+
+4. KEEP:
+   - Conversation in chronological order
+   - Original technical meaning and facts exactly as in source
+   - Do NOT merge different unrelated topics; keep only the relevant issue/discussion
+
+5. DO NOT:
+   - Invent, guess, or add any new information
+   - Include any cookie/privacy/legal content
+   - Output any additional commentary or meta-notes — return ONLY the cleaned text
+
+***
+RAW TEXT TO CLEAN:
+{raw_data}
+***
+RETURN:
+Only the cleaned text ready to feed into another LLM.
 """

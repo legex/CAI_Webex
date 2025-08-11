@@ -1,6 +1,6 @@
+import numpy as np
 from datamanagement.core.generatebase import ChunkandGenerate
 from datamanagement.core.embedding_model import EmbeddingModel
-import numpy as np
 from datamanagement.core.logger import setup_logger
 
 logger = setup_logger('chunk_embed_rank', 'datamanagement/log/chunk_embed_rank.log')
@@ -27,7 +27,7 @@ class ChunkEmbedRank(ChunkandGenerate):
         self.cross_encoder = model_wrapper.get_cross_encoder()
         self.model_lock = model_wrapper.lock
 
-    def generate_embedding(self, query: str = None):
+    def generate_embedding(self, query: str = None, response_text = None):
         """
         Generate embedding(s) for the input query string.
         If query length exceeds 500 characters, it is chunked before embedding.
@@ -43,17 +43,20 @@ class ChunkEmbedRank(ChunkandGenerate):
             return None
         if len(query) >= 500:
             query_chunks = self.chunk_text(query)
-            logger.info(f"Query length {len(query)} chars; split into {len(query_chunks)} chunks.")
+            logger.info("Query length %d chars; split into %d chunks.",
+                        len(query),
+                        len(query_chunks)
+                        )
         else:
             query_chunks = [query]
-            logger.info(f"Query length {len(query)} chars; embedding directly without chunking.")
+            logger.info("Query length %d chars; embedding directly without chunking.", len(query))
 
         with self.model_lock:
             query_embedding = [self.model.encode(chunk).tolist() for chunk in query_chunks]
-            logger.debug(f"Generated embeddings for {len(query_embedding)} chunk(s).")
+            logger.debug("Generated embeddings for %d chunk(s).", len(query_embedding))
 
         if len(query_embedding) == 1:
             return query_embedding[0]
         else:
-            logger.info(f"Averaged embedding across {len(query_embedding)} chunks.")
+            logger.info("Averaged embedding across %d chunks.", len(query_embedding))
             return np.mean(query_embedding, axis=0).tolist()
