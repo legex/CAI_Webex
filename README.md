@@ -21,11 +21,11 @@ An AI Agent capable to solving complex technical queries which revolves around T
 
 - If RAG Query:
     - Tool call will be initiated to perform vector and semantic search towards mongodb vector database
-    - top_k = 5, docs will be retrieved and provided to the model as context
+    - Parallel websearch with user query will be made, and context will be generated based on vector search and web search results
+    - top_k = 5, docs will be retrieved and provided to the model as context, top_k=2 for websearch
     - Model will generate response
 
 - Store and summarize current conversation
 
 ## Future improvements:
-- Implement web search with the bot
-- Expand technical area of expertise
+- Expand technical area of expertise (limited due MongogDB size limit)

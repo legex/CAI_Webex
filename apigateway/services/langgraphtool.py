@@ -61,8 +61,6 @@ def tool_node(state: State):
     context_web = web_search.modelcall(state["query"])
     context_vectorsearch = tl.retrieval_tool(state["query"])
     context = context_vectorsearch+context_web
-    with open("data.txt", "w", encoding='utf-8') as f:
-        f.write(context)
     logger.debug("tool_node retrieved context: %s", context)
     result = {
         "query": state["query"],
