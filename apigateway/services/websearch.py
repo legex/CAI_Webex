@@ -1,7 +1,6 @@
 import os
 from dotenv import load_dotenv
 from langchain_core.prompts import ChatPromptTemplate
-#from langchain_core.messages import HumanMessage
 from tavily import TavilyClient
 from apigateway.prompt.prompt import TEMPLATE_CLEANDATA
 from apigateway.services.modelbase import LLMModel
@@ -14,13 +13,20 @@ logger = setup_logger("websearch", 'datamanagement/log/websearchapi.log')
 
 class WebSearch:
     def __init__(self):
+        """
+        Initialize WebSearch with Tavily client and LLM model.
+        
+        Raises:
+            ValueError: If TAVILY_API_KEY is not found in environment variables.
+            Exception: If initialization of Tavily client or LLM model fails.
+        """
         try:
             logger.info("Initializing WebSearch")
             self.tavilyapikey = os.getenv("TAVILY_API_KEY")
             if not self.tavilyapikey:
                 logger.error("TAVILY_API_KEY not found in environment variables")
                 raise ValueError("TAVILY_API_KEY not found")
-            
+
             self.tavily_client = TavilyClient(api_key=self.tavilyapikey)
             self.prompt = TEMPLATE_CLEANDATA
             _model_wrapper = LLMModel.get_instance()
@@ -30,7 +36,20 @@ class WebSearch:
             logger.error("Failed to initialize WebSearch: %s", str(e))
             raise
 
-    def tavilywrapper(self, query:str, top_k: int):
+    def tavilywrapper(self, query: str, top_k: int):
+        """
+        Wrapper for Tavily search API with error handling.
+        
+        Args:
+            query (str): The search query to execute.
+            top_k (int): Maximum number of search results to return.
+            
+        Returns:
+            dict: Search results from Tavily API containing URLs and raw content.
+            
+        Raises:
+            Exception: If the Tavily search API call fails.
+        """
         try:
             logger.info("tavilywrapper called with query: %s, top_k: %s", query, top_k)
             result = self.tavily_client.search(query,
@@ -45,6 +64,18 @@ class WebSearch:
             raise
 
     def search_web(self, query):
+        """
+        Search the web and extract URLs and raw content from results.
+        
+        Args:
+            query (str): The search query to execute.
+            
+        Returns:
+            dict: Dictionary containing 'urls' and 'raw_content' lists.
+            
+        Raises:
+            Exception: If web search fails or result processing fails.
+        """
         try:
             logger.info("search_web called with query: %s", query)
             search_results = self.tavilywrapper(query, 2)
@@ -54,7 +85,7 @@ class WebSearch:
             for result in search_results['results']:
                 search_content['urls'].append(result['url'])
                 search_content['raw_content'].append(result['raw_content'])
-            
+
             logger.info("search_web found %s results", len(search_content['urls']))
             logger.debug("search_web URLs: %s", search_content['urls'])
             return search_content
@@ -63,6 +94,18 @@ class WebSearch:
             raise
 
     def build_context_web(self, query):
+        """
+        Build context string from web search results by cleaning and joining content.
+        
+        Args:
+            query (str): The search query to execute.
+            
+        Returns:
+            str: Cleaned and joined web content as context string.
+            
+        Raises:
+            Exception: If web search or content cleaning fails.
+        """
         try:
             logger.info("build_context_web called with query: %s", query)
             web_content = self.search_web(query)
@@ -75,6 +118,21 @@ class WebSearch:
             raise
 
     def str_clean_wrapper(self, raw_content: list):
+        """
+        Clean raw web content using the web agent cleaner.
+        
+        Args:
+            raw_content (list): List of raw content strings to clean.
+            
+        Returns:
+            list: List of cleaned content strings.
+            
+        Raises:
+            Exception: If the cleaning process fails completely.
+            
+        Note:
+            Individual item cleaning failures are logged as warnings but don't stop processing.
+        """
         try:
             logger.info("str_clean_wrapper called with %s items", len(raw_content))
             cleaned_items = []
@@ -85,14 +143,33 @@ class WebSearch:
                 except ValueError as e:
                     logger.warning("Failed to clean item %s: %s", i, str(e))
                     continue
-            
-            logger.info("str_clean_wrapper cleaned %s out of %s items", len(cleaned_items), len(raw_content))
+
+            logger.info("str_clean_wrapper cleaned %s out of %s items",
+                        len(cleaned_items),
+                        len(raw_content))
             return cleaned_items
         except Exception as e:
             logger.error("str_clean_wrapper failed: %s", str(e))
             raise
 
     def modelcall(self, query):
+        """
+        Execute complete web search and LLM processing pipeline.
+        
+        This method:
+        1. Builds web context from search results
+        2. Formats the context using a prompt template
+        3. Invokes the LLM model to process the data
+        
+        Args:
+            query (str): The search query to execute.
+            
+        Returns:
+            Any: Response from the LLM model after processing web content.
+            
+        Raises:
+            Exception: If any step in the pipeline fails.
+        """
         try:
             logger.info("modelcall called with query: %s", query)
             context = self.build_context_web(query)
