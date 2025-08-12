@@ -1,0 +1,108 @@
+CMS users
+Now, since you have already validated that CMS can trust CUCM, you can proceed with testing Presence.
+Adding CUPS and CUCM to CMS
+Verify
+Signed on two clients with the same user (synced from the same LDAP):
+
+User login in Jabber and webapp
+Both clients signed into the same user test@test.com.
+Presence in Jabber and Webapp before call
+
+configured in order to update the presence status of Jabber users while they are engaged in a Cisco Meeting 
+Server web app meeting.
+Configure
+Enabling Secure Communication between CMS and CUCM/IMP Server
+Log into CUCM on the OS admin page, navigate to Security > Certificate Management, and download the TOMCAT 
+certificate.
+CUCM Tomcat Certificate
+Log into the Cisco Unified Presence Server (CUPS) on the OS admin page, navigate to Security > Certificate
+
+3. CMS not regitsering becasue of certificate issue
+You see the TCP traffic being exchanged between CUCM and CMS, however CUCM is resetting the TCP 
+cpnnection.
+Solution
+During the 3 way handshake to set up the TCP connection between CMS and CUCM, CMS is presenting its 
+webadmin certificate to CUCM. The URL used in the ovverride prameter needs to be present in the 
+WebAdmin certificate either as CN or in the SAN field.
+
+subscribers of the CUCM cluster, hence, they also rely on the CUCMs NTP. In other words, if the 
+NTP is out-of-sync on the IM&P server, it causes issues in the system with its Database Replication 
+and High Availability.
+Installation Process
+When CUCM is installed, there is a prompt to determine if the server is the first node in the cluster.
+
+This document covers the purpose of NTP with CUCM, the configuration of NTP, what data to collect to 
+troubleshoot, example analysis of the data, and related resources for additional research.
+The purpose of the NTP with CUCM is to ensure that the servers are aware of the correct time. The time in 
+the CUCM servers is important because Voice Over Internet Protocol (VOIP) is extremely sensitive to time 
+variations.
+
+Perform the next steps before you reproduce the issue.
+Step 1. Set the logs to detailed level in all the CUCM nodes
+- CM Trace 
+- DB Layer Monitor 
+- CCMAdmin Web Service 
+- CCMUser Web Service
+
+Note: Keep in mind that some traces are already set to detailed level, this configuration depends on 
+the version of CUCM that you have installed.
+Step 2. Reproduce the issue. Attempt to add the SIP trunk and mark down the time when it fails to 
+accomplish the task
+Troubleshoot
+Navigate to the RTMT (Real-Time Monitor Tool) and get these traces:
+- CM Trace 
+- DB Layer Monitor 
+- CCMAdmin Web Service 
+- CCMUser Web Service
+- Event-Viewer Application Logs
+- Event-Viewer System Logs
+Log Analysis
+
+FQDN to CN verification.
+ Step 2. In order to complete the configuration change to LDAPS, click Perform Full Sync Now, as shown 
+in the image:
+Step 3. Navigate to CUCM Administration > User Management > End User and verify that end-users are 
+present, as shown in the image:
+Step 4. Navigate to ccmuser page (https://<ip address of cucm pub>/ccmuser) in order to verify that the 
+user log in is successful. 
+The ccmuser page for CUCM version 12.0.1 looks like this:
+
+Note: See this link for information in order to update from non-secure LDAP to secure LDAPS 
+connections to AD for other Cisco Collaboration Applications: Software Advisory: Secure LDAP 
+Mandatory for Active Directory Connections
+Verify and Install LDAPS Certificates
+Step 1. After the LDAPS certificate has been uploaded to the AD server, verify that LDAPS is enabled on 
+the AD server with the ldp.exe tool.
+Start the AD  Administration Tool (Ldp.exe) on the AD server.1. LDAP user synchronization issues between Active Directory (AD) and CUCM
+
+01-22-2019
+Dear experts, I don't seem to be synchronizing AD with CUCM users. Could i have some assistance or pointers? I will appreciate thanks in advance.
+Solved!
+
+01-22-2019
+Try using an AD administrative account (like the domain admin account) to see if entering that account information in CUCM successfully saves. If so, then one of the above is the problem. If that does not fix your problem, let us know and we can look further. - Maren Mahoney
+
+01-22-2019
+Hi there, Could you elaborate more on the issue and share your configuration. Does this mean non of the users are getting synced with CUCM? First hand, please go thru this document and verify all the configurations are in place. Also share your Dirsync logs if the issue persists. Hope this helps. - Rath!
+
+01-22-2019
+Some useful resource you sent here i followed the document item by item and this is what i got when i tried to synch it. I got this error. **Login Failure to Host ldap://1X2.1X.2XX.10:389, Please Re-Enter LDAP Manager Distinguished Name and Password** Should I reset the AD password on the windows side? - User
+
+01-22-2019
+Please make sure that you enter the correct AD password on the CUCM side. I strongly suggest to contact your AD Administrator prior of resetting any password. - George
+
+01-23-2019
+Okay the synchronization was working before till AD started having issues i changed the Windows Admin password to something else. I put the same new password on CUCM and did a synchronization. Below is what i get when i do " perform full synch".. **Status: Ready** How do i know that AD and CUCM are now in sync. - User
+
+01-23-2019
+You can use RTMT - System - Syslog Viewer and check the Cisco DirSync messages. Hope this helps. - George
+
+01-23-2019
+Maren, Ratish and George I used all the data you gave me i have resolved the issue. I matched the password on CUCM and AD. I created the users on AD and did a manual Sync. Thanks for the quick help. - User
+
+06-03-2021
+Currently having issues synching new employees in AD to CUCM. Has anyone ran into this, or know some troubleshooting steps? Before I would just perform full synch and the users would appear, but about a week ago after creating a new user, they would not pick them up. I verified that all the lines on an AD profile were filled unless there's a specific one that matters and I don't know about.
+I can't seem to figure out the issue and I can't think of any changes at all that may have caused this. **When I do perform full synch no errors appear. The system just says that the synch was successful, but the new users don't appear.** Solved! - User
+
+06-04-2021
+Okay, I was able to figure out the issue. I want to start off by explaining some more of the situation. Im still learning the system and the only 2 people that had set it up were long gone and I'm still new. with that said anyone in the same situation that finds this question, I will provide a video on how the sync system is set up that I found on youtube, just so you know the simple process. What I ended up doing was going to the LDAP Directory in CUCM and under LDAP Manager Distinguished Name I noticed the format. it was CN=CUCM,OU=IT,DC=example,DC=local. out of curiosity, I changed it to 'CUCM@example.local', saved it, and performed full sync. This resolved the issue. - User

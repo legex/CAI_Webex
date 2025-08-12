@@ -78,7 +78,7 @@ STRICT CLEANING RULES:
 
 2. PRESERVE:
    - Core user and expert conversation that is relevant to the main technical problem
-   - Relevant technical logs, traces, configs, or code — wrap these in triple backticks (```
+   - Relevant technical logs, traces, configs, command, or code — wrap these in triple backticks (example ``` command ```)
    - Important timestamps only if they help understand the sequence of discussion.
 
 3. CONDENSE:
