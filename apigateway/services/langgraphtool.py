@@ -4,12 +4,15 @@ from langchain.schema import HumanMessage, AIMessage, BaseMessage
 from langchain_core.messages import RemoveMessage
 from langgraph.graph.message import add_messages
 from langgraph.graph import END
-from langgraph.checkpoint.memory import InMemorySaver
 from apigateway.services.tools import Tools
+from apigateway.services.websearch import WebSearch
+from datamanagement.core.logger import setup_logger
 
+logger = setup_logger("nodelog", 'datamanagement/log/nodes.log')
+
+web_search = WebSearch()
 
 tl = Tools()
-memory = InMemorySaver()
 
 class State(TypedDict):
     """
@@ -32,7 +35,8 @@ def start_node(state: State):
     Returns:
         dict: Updated state with initialized fields.
     """
-    return {
+    logger.info("start_node called with query: %s", state.get('query', ''))
+    result = {
         "query": state["query"],
         "messages": state.get("messages", []),
         "context": "",
@@ -40,6 +44,8 @@ def start_node(state: State):
         "response": "",
         "user_name": state.get("user_name", "")
     }
+    logger.debug("start_node result: %s", result)
+    return result
 
 def tool_node(state: State):
     """
@@ -51,14 +57,22 @@ def tool_node(state: State):
     Returns:
         dict: Updated state with retrieved context.
     """
-    context = tl.retrieval_tool(state["query"])
-    return {
+    logger.info("tool_node called with query: %s", state.get('query', ''))
+    context_web = web_search.modelcall(state["query"])
+    context_vectorsearch = tl.retrieval_tool(state["query"])
+    context = context_vectorsearch+context_web
+    with open("data.txt", "w", encoding='utf-8') as f:
+        f.write(context)
+    logger.debug("tool_node retrieved context: %s", context)
+    result = {
         "query": state["query"],
         "context": context,
         "messages": state["messages"],
         "summary": state.get("summary", ""),
         "response": state.get("response", ""),
     }
+    logger.debug("tool_node result: %s", result)
+    return result
 
 def extract_name_node(state: State):
     """
@@ -70,6 +84,7 @@ def extract_name_node(state: State):
     Returns:
         dict: Updated state with extracted user name if found.
     """
+    logger.info("extract_name_node called with query: %s", state.get('query', ''))
     query = state["query"]
     current_name = state.get("user_name", "")
 
@@ -78,8 +93,12 @@ def extract_name_node(state: State):
     match = re.search(pattern, query, re.IGNORECASE)
     if match:
         extracted_name = match.group(1).strip()
+        logger.info("extract_name_node extracted name: %s", extracted_name)
         if extracted_name.lower() != current_name.lower():
-            return {**state, "user_name": extracted_name}
+            result = {**state, "user_name": extracted_name}
+            logger.debug("extract_name_node result: %s", result)
+            return result
+    logger.debug("extract_name_node no name extracted or name unchanged.")
     return state
 
 async def rag_invoke_node(state: State):
@@ -92,14 +111,17 @@ async def rag_invoke_node(state: State):
     Returns:
         dict: Updated state with response and messages.
     """
+    logger.info("rag_invoke_node called with query: %s", state.get('query', ''))
     messages = state["messages"] + [HumanMessage(content=state["query"])]
+    logger.debug("rag_invoke_node messages: %s", messages)
     answer_text = await tl.llm_with_context(messages,
                                             context=state["context"],
                                             summary=state.get("summary", ""),
                                             username=state.get("user_name", "")
                                             )
+    logger.info("rag_invoke_node LLM answer: %s", answer_text)
     messages.append(AIMessage(content=answer_text))
-    return {
+    result = {
         "response": answer_text,
         "messages": messages,
         "query": state["query"],
@@ -107,7 +129,8 @@ async def rag_invoke_node(state: State):
         "summary": state.get("summary", ""),
         "user_name": state.get("user_name", ""),
     }
-
+    logger.debug("rag_invoke_node result: %s", result)
+    return result
 
 async def smalltalk_node(state: State):
     """
@@ -119,15 +142,18 @@ async def smalltalk_node(state: State):
     Returns:
         dict: Updated state with response and messages.
     """
+    logger.info("smalltalk_node called with query: %s", state.get('query', ''))
     messages = state["messages"] + [HumanMessage(content=state["query"])]
     summary = state.get("summary") or ""
     summary_message = (f"This is summary of the conversation to date: {summary}\n\nExtend the summary by taking into account the new messages above:" if summary else None)
+    logger.debug("smalltalk_node messages: %s, summary_message: %s", messages, summary_message)
     answer_text = await tl.smalltalk_tool(messages,
                                           summary=summary_message,
                                           username=state.get("user_name", "")
                                           )
+    logger.info("smalltalk_node answer: %s", answer_text)
     messages.append(AIMessage(content=answer_text))
-    return {
+    result = {
         "response": answer_text,
         "messages": messages,
         "summary": summary,
@@ -135,7 +161,8 @@ async def smalltalk_node(state: State):
         "context": state.get("context", ""),
         "user_name": state.get("user_name", ""),
     }
-
+    logger.debug("smalltalk_node result: %s", result)
+    return result
 
 async def summarize_conversation(state: State):
     """
@@ -147,6 +174,7 @@ async def summarize_conversation(state: State):
     Returns:
         dict: Updated state with summary and pruned messages.
     """
+    logger.info("summarize_conversation called")
     summary = state.get("summary", "")
     if summary:
         summary_message = (
@@ -156,10 +184,13 @@ async def summarize_conversation(state: State):
     else:
         summary_message = "Create a summary of the conversation above:"
     messages = state["messages"] + [HumanMessage(content=summary_message)]
+    logger.debug("summarize_conversation messages: %s", messages)
     summary_text = await tl.create_summary(messages)
+    logger.info("summarize_conversation summary_text: %s", summary_text)
 
     pruned_messages = [RemoveMessage(id=m.id) for m in state["messages"][:-2]]
-    return {
+    logger.debug("summarize_conversation pruned_messages: %s", pruned_messages)
+    result = {
         "summary": summary_text,
         "messages": pruned_messages,
         "query": state.get("query", ""),
@@ -167,6 +198,8 @@ async def summarize_conversation(state: State):
         "response": state.get("response", ""),
         "user_name": state.get("user_name", "")
     }
+    logger.debug("summarize_conversation result: %s", result)
+    return result
 
 def route_by_intent(state: State):
     """
@@ -178,15 +211,21 @@ def route_by_intent(state: State):
     Returns:
         str: The next node name ("tool" or "smalltalk").
     """
-    return "tool" if tl.is_technical(state["query"]) else "smalltalk"
+    logger.info("route_by_intent called with query: %s", state.get('query', ''))
+    intent = "tool" if tl.is_technical(state["query"]) else "smalltalk"
+    logger.info("route_by_intent determined intent: %s", intent)
+    return intent
 
 def should_summarize(state: State):
+    logger.info("should_summarize called")
     messages = state["messages"]
-
+    logger.debug("should_summarize message count: %s", len(messages))
     if len(messages) > 6:
+        logger.info("should_summarize: will summarize_conversation")
         return "summarize_conversation"
-    
+    logger.info("should_summarize: will END")
     return END
 
 async def connector_node(state: State):
+    logger.info("connector_node called")
     return {}
