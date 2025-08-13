@@ -215,6 +215,7 @@ def route_by_intent(state: State):
     return intent
 
 def should_summarize(state: State):
+    """Node to determine whether to summarize or not"""
     logger.info("should_summarize called")
     messages = state["messages"]
     logger.debug("should_summarize message count: %s", len(messages))
@@ -224,6 +225,7 @@ def should_summarize(state: State):
     logger.info("should_summarize: will END")
     return END
 
-async def connector_node(state: State):
+async def connector_node(state: State): # pylint: disable=unused-argument
+    """Passthrough state"""
     logger.info("connector_node called")
     return {}

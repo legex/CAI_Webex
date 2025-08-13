@@ -262,7 +262,7 @@ class RagEngine:
                 context = "\n\n".join([ctx for ctx in thread_contexts.values() if ctx.strip()])
             else:
                 context = self.build_context(top_chunks)
-            logger.info("Here is context for internal logging: %s", context)
+            logger.info("Here is length context for internal logging: %s", len(context))
             #response = self.chain.invoke({"technical_docs": context, "question": query})
             return context
 

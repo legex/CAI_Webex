@@ -28,4 +28,7 @@ An AI Agent capable to solving complex technical queries which revolves around T
 - Store and summarize current conversation
 
 ## Future improvements:
+- Small features to implement:
+    - SLM or distilled for intent recognition and NER
+- Implement meeting scheduler integrated (use existing meeting proj code)
 - Expand technical area of expertise (limited due MongogDB size limit)

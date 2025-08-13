@@ -77,7 +77,6 @@ async def invoke_model(request: Query, session_id="default_session"):
     REQUEST_COUNT.labels(endpoint="/invoke", method="POST").inc()
     with REQUEST_LATENCY.labels(endpoint="/invoke", method="POST").time():
         config = get_config_with_session(session_id)
-        #previous_states = memory.get(config)
         state = {
             "query": "",
             "context": "",

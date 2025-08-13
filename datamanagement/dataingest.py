@@ -1,9 +1,9 @@
 import sys
 import os
+import json
 from dotenv import load_dotenv
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-import json
 from db.mongo import MongoDBConn
 from config.settings import COMMUNITY_FILES, WEBEX_FILE
 
