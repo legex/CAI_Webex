@@ -1,6 +1,6 @@
 from functools import lru_cache
 from langgraph.graph import StateGraph, START, END
-from apigateway.services.langgraphtool import (
+from coreservices.services.langgraphtool import (
     State,
     smalltalk_node,
     summarize_conversation,

@@ -1,7 +1,5 @@
 import os
 import requests
-from datamanagement.scraping.base import BaseScraper
-
 class CollectPDFs():
     
     def scrape(self, urls, downloads_folder: str):

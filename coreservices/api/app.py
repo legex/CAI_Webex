@@ -20,8 +20,8 @@ from prometheus_client import (
 from fastapi import FastAPI, Request
 from fastapi.responses import Response
 from datamanagement.core.logger import setup_logger
-from apigateway.services.generate_response import get_response
-from apigateway.api.utils import get_config_with_session
+from coreservices.services.generate_response import get_response
+from coreservices.api.utils import get_config_with_session
 
 logger = setup_logger('api_router', 'datamanagement/log/api_router.log')
 

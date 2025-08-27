@@ -1,0 +1,33 @@
+# ─── HTTP, networking ───────────────────────────────────────────────
+requests>=2.31.0
+urllib3>=2.2.0
+
+# ─── Web-scraping / browser automation ──────────────────────────────
+selenium>=4.20.0            # Chrome / Firefox WebDriver support
+beautifulsoup4>=4.12.2      # import bs4
+
+# ─── Data stores ────────────────────────────────────────────────────
+pymongo>=4.6.3              # MongoDB driver
+
+# ─── LLM / embeddings / RAG stack ───────────────────────────────────
+langchain>=0.1.16           # Core LangChain package
+langchain-community>=0.2.1  # PyPDFLoader, other community loaders
+sentence-transformers>=2.6.1
+transformers>=4.41.0
+torch>=2.3.0                # CPU build; GPU users can install +cuXY
+huggingface-hub>=0.23.3
+
+# ─── Text splitting / numeric computing ────────────────────────────
+numpy>=1.26.4
+
+# ─── Configuration / environment handling ──────────────────────────
+python-dotenv>=1.0.1
+
+# ─── API & monitoring stack ────────────────────────────────────────
+fastapi>=0.111.0
+pydantic>=2.7.1
+uvicorn[standard]>=0.29.0
+prometheus-client>=0.20.0
+
+# ─── Miscellaneous utilities ───────────────────────────────────────
+# (None needed beyond the standard library for logging, threading, typing, etc.)
