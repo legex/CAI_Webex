@@ -2,7 +2,6 @@ datamanagement/core/.env
 .agentr/
 hf_cache/
 datamanagement/data/
-datamanagement/config/__pycache__
 *.pyc
 collected_thread_urls.txt
 thread_urls.json
@@ -14,3 +13,4 @@ CAI_Webex/
 test.ipynb
 generation.py
 test_initial_codes.py
+*__pycache__
