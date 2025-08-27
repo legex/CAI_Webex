@@ -1,3 +1,5 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.3.0+cpu 
 # ─── HTTP, networking ───────────────────────────────────────────────
 requests>=2.31.0
 urllib3>=2.2.0
@@ -14,7 +16,6 @@ langchain>=0.1.16           # Core LangChain package
 langchain-community>=0.2.1  # PyPDFLoader, other community loaders
 sentence-transformers>=2.6.1
 transformers>=4.41.0
-torch>=2.3.0                # CPU build; GPU users can install +cuXY
 huggingface-hub>=0.23.3
 
 # ─── Text splitting / numeric computing ────────────────────────────
