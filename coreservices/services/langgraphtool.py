@@ -4,9 +4,9 @@ from langchain.schema import HumanMessage, AIMessage, BaseMessage
 from langchain_core.messages import RemoveMessage
 from langgraph.graph.message import add_messages
 from langgraph.graph import END
-from coreservices.services.tools import Tools
-from coreservices.services.websearch import WebSearch
-from coreservices.logger.logger import setup_logger
+from services.tools import Tools
+from services.websearch import WebSearch
+from logger.logger import setup_logger
 
 logger = setup_logger("nodelog", 'log/nodes.log')
 

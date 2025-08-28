@@ -2,10 +2,9 @@ import os
 import asyncio
 from dotenv import load_dotenv
 from langgraph.checkpoint.mongodb.aio import AsyncMongoDBSaver
-from coreservices.services.langgraphtool import State
-from coreservices.services.langgraph_builder import create_graph
+from services.langgraphtool import State
+from services.langgraph_builder import create_graph
 
-load_dotenv(r'datamanagement\core\.env')
 mongouri = os.getenv("MONGO_URI")
 
 async def get_response(state: State, config):

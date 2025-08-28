@@ -7,10 +7,10 @@ from typing import List
 import traceback
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema import BaseMessage, HumanMessage
-from coreservices.services.modelbase import LLMModel
-from coreservices.prompt.prompt import TEMPLATE_TECHNICAL, TEMPLATE_GENERAL, TEMPLATE_SUMMARY
-from coreservices.services.settings import rag_apiendpoint
-from coreservices.logger.logger import setup_logger
+from services.modelbase import LLMModel
+from prompt.prompt import TEMPLATE_TECHNICAL, TEMPLATE_GENERAL, TEMPLATE_SUMMARY
+from services.settings import rag_apiendpoint
+from logger.logger import setup_logger
 
 
 logger = setup_logger("langgraphtools", 'log/langgraphtools.log')

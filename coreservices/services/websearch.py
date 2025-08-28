@@ -3,12 +3,11 @@ import requests
 from dotenv import load_dotenv
 from langchain_core.prompts import ChatPromptTemplate
 from tavily import TavilyClient
-from coreservices.prompt.prompt import TEMPLATE_CLEANDATA
-from coreservices.services.modelbase import LLMModel
-from coreservices.services.settings import cleanraw, domains
-from coreservices.logger.logger import setup_logger
+from prompt.prompt import TEMPLATE_CLEANDATA
+from services.modelbase import LLMModel
+from services.settings import cleanraw, domains
+from logger.logger import setup_logger
 
-load_dotenv(r'datamanagement\core\.env')
 logger = setup_logger("websearch", 'log/websearchapi.log')
 
 class WebSearch:
