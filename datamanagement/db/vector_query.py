@@ -8,7 +8,7 @@ Key Components:
     - VectorSearch: Unified interface for MongoDB $vectorSearch aggregation, $text full-text search, and post-retrieval reranking.
 
 Usage Example:
-    from datamanagement.db.vector_query import VectorSearch
+    from db.vector_query import VectorSearch
     searcher = VectorSearch("mongodb://localhost:27017", "cisco_docs", "dataset")
     results = searcher.similarity_search("Webex issue?")
     ranked = searcher.rerank_results("Webex issue?", results)
@@ -25,10 +25,10 @@ Notes:
     - Combine vector, sparse, and hybrid retrieval paths for optimal RAG recall and precision.
 """
 from typing import List, Dict, Any
-from datamanagement.core.querychunking import ChunkEmbedRank
-from datamanagement.db.db_base import DBBase
-from datamanagement.core.embedding_model import EmbeddingModel
-from datamanagement.core.logger import setup_logger
+from core.querychunking import ChunkEmbedRank
+from db.db_base import DBBase
+from core.embedding_model import EmbeddingModel
+from core.logger import setup_logger
 
 logger = setup_logger('vector_search', 'datamanagement/log/vector_search.log')
 

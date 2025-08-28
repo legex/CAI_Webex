@@ -34,11 +34,11 @@ import os
 import re
 import pymongo.errors
 from dotenv import load_dotenv
-from datamanagement.core.logger import setup_logger
-from datamanagement.db.vector_query import VectorSearch
+from core.logger import setup_logger
+from db.vector_query import VectorSearch
 
 
-logger = setup_logger("rag_engine", 'datamanagement/log/rag_engine.log')
+logger = setup_logger("rag_engine", 'log/rag_engine.log')
 
 AUTHORITATIVE_DOMAINS = [
     "help.webex.com", "support.cisco.com", "www.webex.com"

@@ -1,11 +1,11 @@
-from datamanagement.core.factory import ScraperFactory
-from datamanagement.core.generatebase import ChunkandGenerate
-from datamanagement.core.embedding_model import EmbeddingModel
 import csv
 import os
-from datamanagement.core.logger import setup_logger
+from core.logger import setup_logger
+from core.factory import ScraperFactory
+from core.generatebase import ChunkandGenerate
+from core.embedding_model import EmbeddingModel
 
-logger = setup_logger('chunk_and_embed', 'datamanagement/log/chunk_and_embed.log')
+logger = setup_logger('chunk_and_embed', 'log/chunk_and_embed.log')
 
 class ChunkAndEmbed(ChunkandGenerate):
     """

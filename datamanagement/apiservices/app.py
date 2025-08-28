@@ -6,13 +6,13 @@ from prometheus_client import (
     )
 from fastapi import FastAPI
 from fastapi.responses import Response
-from datamanagement.core.logger import setup_logger
-from datamanagement.cleanrawstring.cleanraw import clean_for_web_agent
-from datamanagement.apiservices.parastruct import CleanRaw, Query
-from datamanagement.core.rag_engine import RagEngine
-from datamanagement.config.settings import INCLUDE_DOMAINS
+from core.logger import setup_logger
+from cleanrawstring.cleanraw import clean_for_web_agent
+from apiservices.parastruct import CleanRaw, Query
+from core.rag_engine import RagEngine
+from config.settings import INCLUDE_DOMAINS
 
-logger = setup_logger("datasetvice", 'datamanagement/log/datasetvice.log')
+logger = setup_logger("datasetvice", 'log/datasetvice.log')
 
 dataservice = FastAPI()
 rg = RagEngine()

@@ -6,9 +6,9 @@ from langgraph.graph.message import add_messages
 from langgraph.graph import END
 from coreservices.services.tools import Tools
 from coreservices.services.websearch import WebSearch
-from datamanagement.core.logger import setup_logger
+from coreservices.logger.logger import setup_logger
 
-logger = setup_logger("nodelog", 'datamanagement/log/nodes.log')
+logger = setup_logger("nodelog", 'log/nodes.log')
 
 web_search = WebSearch()
 

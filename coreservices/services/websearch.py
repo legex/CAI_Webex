@@ -6,10 +6,10 @@ from tavily import TavilyClient
 from coreservices.prompt.prompt import TEMPLATE_CLEANDATA
 from coreservices.services.modelbase import LLMModel
 from coreservices.services.settings import cleanraw, domains
-from datamanagement.core.logger import setup_logger
+from coreservices.logger.logger import setup_logger
 
 load_dotenv(r'datamanagement\core\.env')
-logger = setup_logger("websearch", 'datamanagement/log/websearchapi.log')
+logger = setup_logger("websearch", 'log/websearchapi.log')
 
 class WebSearch:
     def __init__(self):
@@ -146,7 +146,6 @@ class WebSearch:
                     url = cleanraw
                     response = requests.post(url, json=data, timeout=30)
                     cleaned_item = response.json()
-                    print(cleaned_item)
                     cleaned_items.append(cleaned_item["cleaned_str"])
                 except ValueError as e:
                     logger.warning("Failed to clean item %s: %s", i, str(e))

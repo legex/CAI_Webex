@@ -1,8 +1,8 @@
-from datamanagement.core.generatebase import ChunkandGenerate
-from datamanagement.core.embedding_model import EmbeddingModel
-from datamanagement.core.logger import setup_logger
+from core.generatebase import ChunkandGenerate
+from core.embedding_model import EmbeddingModel
+from core.logger import setup_logger
 
-logger = setup_logger('pdfembeddings', 'datamanagement/log/pdfembeddings.log')
+logger = setup_logger('pdfembeddings', 'log/pdfembeddings.log')
 
 class PDFEmbed(ChunkandGenerate):
     """

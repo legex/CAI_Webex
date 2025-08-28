@@ -1,9 +1,9 @@
-from datamanagement.scraping.community import CommunityScraper
-from datamanagement.scraping.webex import WebexScraper
-from datamanagement.scraping.base import BaseScraper
-from datamanagement.core.logger import setup_logger
+from scraping.community import CommunityScraper
+from scraping.webex import WebexScraper
+from scraping.base import BaseScraper
+from core.logger import setup_logger
 
-logger = setup_logger('scraper_factory', 'datamanagement/log/scraper_factory.log')
+logger = setup_logger('scraper_factory', 'log/scraper_factory.log')
 
 class ScraperFactory:
     """

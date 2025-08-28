@@ -1,6 +1,6 @@
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
-from datamanagement.core.logger import setup_logger
+from core.logger import setup_logger
 
 logger = setup_logger('db_base', 'datamanagement/log/db_base.log')
 

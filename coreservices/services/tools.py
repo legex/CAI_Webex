@@ -10,10 +10,10 @@ from langchain.schema import BaseMessage, HumanMessage
 from coreservices.services.modelbase import LLMModel
 from coreservices.prompt.prompt import TEMPLATE_TECHNICAL, TEMPLATE_GENERAL, TEMPLATE_SUMMARY
 from coreservices.services.settings import rag_apiendpoint
-from datamanagement.core.logger import setup_logger
+from coreservices.logger.logger import setup_logger
 
 
-logger = setup_logger("langgraphtools", 'datamanagement/log/langgraphtools.log')
+logger = setup_logger("langgraphtools", 'log/langgraphtools.log')
 
 class Tools:
     """Provides tools for prompt handling, technical/smalltalk routing, and summary creation."""
