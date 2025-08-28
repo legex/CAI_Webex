@@ -11,6 +11,24 @@ An AI Agent capable to solving complex technical queries which revolves around T
 - Embedding Model: allmpnet
 - Vector Database: MongoDB
 
+## Microservice Architecture:
+Containatainarization is divided as:
+- Datamanagement handles:
+    - Data ingestion
+        - Chunking
+        - Embedding
+        - Save to db
+    - RAG Engine:
+        - Query embedding
+        - Vector search
+        - semantic search
+- Coreservices handles:
+    - LLM response generation
+    - Workflow orchestration
+    - Gateway for UI
+- LLM-serve:
+    - serves LLM model for coreservices
+
 ## Workflow:
 - Webex Webhook event awaits for invokation
 - Message received from webex to bot, and intent classifier will start its working to classify it as:
