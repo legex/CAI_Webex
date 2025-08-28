@@ -9,10 +9,10 @@ Uses sslbypass module for legacy session handling to bypass SSL issues if needed
 import re
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup
-from datamanagement.core.logger import setup_logger
-from datamanagement.scraping import sslbypass
+from core.logger import setup_logger
+from scraping import sslbypass
 
-logger = setup_logger('url_access', 'datamanagement/log/url_access.log')
+logger = setup_logger('url_access', 'log/url_access.log')
 
 class URLAccess:
     """

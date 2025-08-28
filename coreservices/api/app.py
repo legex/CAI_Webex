@@ -19,13 +19,12 @@ from prometheus_client import (
     )
 from fastapi import FastAPI, Request
 from fastapi.responses import Response
-from datamanagement.core.logger import setup_logger
-from apigateway.services.generate_response import get_response
-from apigateway.api.utils import get_config_with_session
+from logger.logger import setup_logger
+from services.generate_response import get_response
+from api.utils import get_config_with_session
 
-logger = setup_logger('api_router', 'datamanagement/log/api_router.log')
+logger = setup_logger('api_router', 'log/api_router.log')
 
-load_dotenv(r'datamanagement\core\.env')
 app = FastAPI()
 api = WebexTeamsAPI(access_token=os.getenv("WEBEX_TOKEN"))
 

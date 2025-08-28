@@ -14,9 +14,9 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
-from datamanagement.core.logger import setup_logger
+from core.logger import setup_logger
 
-logger = setup_logger('link_collector', 'datamanagement/log/link_collector.log')
+logger = setup_logger('link_collector', 'log/link_collector.log')
 
 class LinkCollector:
     """

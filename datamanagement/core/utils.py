@@ -3,10 +3,10 @@ from typing import List, Set
 from huggingface_hub import login
 import os
 from dotenv import load_dotenv
-from datamanagement.core.logger import setup_logger
+from core.logger import setup_logger
 
 # Setup logger for this module
-logger = setup_logger("huggingface_utils", 'datamanagement/log/huggingface_utils.log')
+logger = setup_logger("huggingface_utils", 'log/huggingface_utils.log')
 load_dotenv()
 
 def load_json_links(file_paths: List[str]) -> List[str]:

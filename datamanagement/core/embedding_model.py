@@ -1,9 +1,9 @@
 from threading import Lock
 from sentence_transformers import SentenceTransformer, CrossEncoder
-from datamanagement.core.utils import huggingface_login
-from datamanagement.core.logger import setup_logger
+from core.utils import huggingface_login
+from core.logger import setup_logger
 
-logger = setup_logger('embedding_model', 'datamanagement/log/embedding_model.log')
+logger = setup_logger('embedding_model', 'log/embedding_model.log')
 
 class EmbeddingModel:
     _instance = None

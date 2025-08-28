@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from datamanagement.core.logger import setup_logger
+from core.logger import setup_logger
 
-logger = setup_logger('chunk_and_generate', 'datamanagement/log/chunk_and_generate.log')
+logger = setup_logger('chunk_and_generate', 'log/chunk_and_generate.log')
 
 class ChunkandGenerate(ABC):
     def __init__(self):

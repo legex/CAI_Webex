@@ -1,9 +1,9 @@
 import numpy as np
-from datamanagement.core.generatebase import ChunkandGenerate
-from datamanagement.core.embedding_model import EmbeddingModel
-from datamanagement.core.logger import setup_logger
+from core.generatebase import ChunkandGenerate
+from core.embedding_model import EmbeddingModel
+from core.logger import setup_logger
 
-logger = setup_logger('chunk_embed_rank', 'datamanagement/log/chunk_embed_rank.log')
+logger = setup_logger('chunk_embed_rank', 'log/chunk_embed_rank.log')
 
 class ChunkEmbedRank(ChunkandGenerate):
     """

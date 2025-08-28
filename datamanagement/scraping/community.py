@@ -4,10 +4,10 @@ Module: community_scraper.py
 Implements a scraper for community forum pages by extracting the user query and accepted solution or follow-up messages.
 Depends on BaseScraper for common scraping utilities.
 """
-from datamanagement.scraping.base import BaseScraper
-from datamanagement.core.logger import setup_logger
+from scraping.base import BaseScraper
+from core.logger import setup_logger
 
-logger = setup_logger('community_scraper', 'datamanagement/log/community_scraper.log')
+logger = setup_logger('community_scraper', 'log/community_scraper.log')
 
 class CommunityScraper(BaseScraper):
     """

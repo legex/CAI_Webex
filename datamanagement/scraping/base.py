@@ -8,10 +8,10 @@ for HTML content retrieval via URLAccess.
 Subclasses must implement the scrape() method to extract relevant data.
 """
 from abc import ABC, abstractmethod
-from datamanagement.scraping.url_access import URLAccess
-from datamanagement.core.logger import setup_logger
+from scraping.url_access import URLAccess
+from core.logger import setup_logger
 
-logger = setup_logger('base_scraper', 'datamanagement/log/base_scraper.log')
+logger = setup_logger('base_scraper', 'log/base_scraper.log')
 
 class BaseScraper(ABC):
     """

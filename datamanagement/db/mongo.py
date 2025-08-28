@@ -1,10 +1,10 @@
 import glob
 import pymongo.errors
 from langchain_community.document_loaders import PyPDFLoader
-from datamanagement.core.embedding import ChunkAndEmbed
-from datamanagement.core.pdfembeddings import PDFEmbed
-from datamanagement.core.logger import setup_logger
-from datamanagement.db.db_base import DBBase
+from core.embedding import ChunkAndEmbed
+from core.pdfembeddings import PDFEmbed
+from core.logger import setup_logger
+from db.db_base import DBBase
 
 logger = setup_logger('mongodb_conn', 'datamanagement/log/mongodb_conn.log')
 

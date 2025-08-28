@@ -1,15 +1,14 @@
 import os
+import requests
 from dotenv import load_dotenv
 from langchain_core.prompts import ChatPromptTemplate
 from tavily import TavilyClient
-from apigateway.prompt.prompt import TEMPLATE_CLEANDATA
-from apigateway.services.modelbase import LLMModel
-from datamanagement.cleanrawstring.cleanraw import clean_for_web_agent
-from datamanagement.config.settings import INCLUDE_DOMAINS
-from datamanagement.core.logger import setup_logger
+from prompt.prompt import TEMPLATE_CLEANDATA
+from services.modelbase import LLMModel
+from services.settings import cleanraw, domains
+from logger.logger import setup_logger
 
-load_dotenv(r'datamanagement\core\.env')
-logger = setup_logger("websearch", 'datamanagement/log/websearchapi.log')
+logger = setup_logger("websearch", 'log/websearchapi.log')
 
 class WebSearch:
     def __init__(self):
@@ -52,10 +51,13 @@ class WebSearch:
         """
         try:
             logger.info("tavilywrapper called with query: %s, top_k: %s", query, top_k)
+            url = domains
+            response = requests.get(url, timeout=30)
+            include_domains = response.json()
             result = self.tavily_client.search(query,
                                         max_results=top_k,
                                         include_raw_content=True,
-                                        include_domains=INCLUDE_DOMAINS
+                                        include_domains=include_domains["domains"]
                                         )
             logger.debug("tavilywrapper search results: %s", result)
             return result
@@ -138,8 +140,12 @@ class WebSearch:
             cleaned_items = []
             for i, item in enumerate(raw_content):
                 try:
-                    cleaned_item = clean_for_web_agent(item)
-                    cleaned_items.append(cleaned_item)
+                    #cleaned_item = clean_for_web_agent(item)
+                    data = {"rawstrings":item}
+                    url = cleanraw
+                    response = requests.post(url, json=data, timeout=30)
+                    cleaned_item = response.json()
+                    cleaned_items.append(cleaned_item["cleaned_str"])
                 except ValueError as e:
                     logger.warning("Failed to clean item %s: %s", i, str(e))
                     continue

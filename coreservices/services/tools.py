@@ -2,22 +2,21 @@
 Tools module for handling prompt construction, technical/smalltalk routing, retrieval, and summary generation
 using LLMs and RAG engine for the CAI_Webex API Gateway.
 """
-
+import requests
 from typing import List
 import traceback
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema import BaseMessage, HumanMessage
-from apigateway.services.rag_engine import RagEngine
-from apigateway.services.modelbase import LLMModel
-from apigateway.prompt.prompt import TEMPLATE_TECHNICAL, TEMPLATE_GENERAL, TEMPLATE_SUMMARY
-from datamanagement.core.logger import setup_logger
+from services.modelbase import LLMModel
+from prompt.prompt import TEMPLATE_TECHNICAL, TEMPLATE_GENERAL, TEMPLATE_SUMMARY
+from services.settings import rag_apiendpoint
+from logger.logger import setup_logger
 
 
-logger = setup_logger("langgraphtools", 'datamanagement/log/langgraphtools.log')
+logger = setup_logger("langgraphtools", 'log/langgraphtools.log')
 
 class Tools:
     """Provides tools for prompt handling, technical/smalltalk routing, and summary creation."""
-
     def __init__(self):
         """
         Initialize the Tools class with model, prompts, and retrieval engine.
@@ -27,7 +26,7 @@ class Tools:
         self.prompt_technical = TEMPLATE_TECHNICAL
         self.prompt_general = TEMPLATE_GENERAL
         self.promt_summary = TEMPLATE_SUMMARY
-        self.rg = RagEngine()
+        self.rgurl = rag_apiendpoint
         logger.info("Tools class initialized with LLMModel and RagEngine.")
 
     def _returnprompt(self, template):
@@ -79,10 +78,14 @@ class Tools:
         """
         try:
             logger.info("[retrieval_tool] Running for query: %r", query)
-            result = self.rg.generate_response(query)
+            #result = self.rg.generate_response(query)
+            data = {"query":query}
+            response = requests.post(self.rag_apiendpoint, json=data, timeout=30)
+            result = response.json()
+            parsed_result = result["context"]
             logger.info("[retrieval_tool] Retrieved context length: %d",
-                        len(result) if result else 0)
-            return result
+                        len(parsed_result) if parsed_result else 0)
+            return parsed_result
         except (AttributeError, RuntimeError, ValueError) as e:
             logger.error("[retrieval_tool] Exception: %s", e)
             logger.debug("%s", traceback.format_exc())

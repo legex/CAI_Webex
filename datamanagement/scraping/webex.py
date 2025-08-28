@@ -5,11 +5,11 @@ Implements a scraper for Webex Help Center pages.
 Extracts the page title (used as a query) and concatenates all paragraph and list item texts as response.
 Depends on BaseScraper for shared web content access utilities.
 """
-from datamanagement.scraping.base import BaseScraper
-from datamanagement.core.logger import setup_logger
+from scraping.base import BaseScraper
+from core.logger import setup_logger
 
 # Initialize logger for this module
-logger = setup_logger('webex_scraper', 'datamanagement/log/webex_scraper.log')
+logger = setup_logger('webex_scraper', 'log/webex_scraper.log')
 
 
 class WebexScraper(BaseScraper):
