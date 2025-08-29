@@ -15,3 +15,5 @@ generation.py
 test_initial_codes.py
 *__pycache__
 coreservices/myenv.env
+datamanagement/datafile.env
+slm_service

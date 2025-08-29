@@ -61,7 +61,6 @@ class RagEngine:
         Raises:
             ValueError: If MONGO_URI is not set.
         """
-        load_dotenv(dotenv_path=r'datamanagement/core/.env')
         self.mongo_uri = os.getenv("MONGO_URI")
         if not self.mongo_uri:
             logger.error("MONGO_URI must be set in .env file.")

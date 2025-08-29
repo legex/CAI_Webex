@@ -7,7 +7,6 @@ from core.logger import setup_logger
 
 # Setup logger for this module
 logger = setup_logger("huggingface_utils", 'log/huggingface_utils.log')
-load_dotenv()
 
 def load_json_links(file_paths: List[str]) -> List[str]:
     """
