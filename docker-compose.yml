@@ -1,19 +1,19 @@
 version: '3.8'
 services:
   data-service:
-    image: data-service  # Your image name
+    image: data-service
     env_file: datamanagement\datafile.env
     ports:
-      - "8001:8001"  # Exposes to host if needed
+      - "8001:8001"
     networks:
       - app-network
 
-  main-app:  # Add your FastAPI app here
-    image: core-service  # Replace with your app's image
+  main-app:
+    image: core-service
     ports:
-      - "8000:8000"  # Adjust for your app's port
+      - "8000:8000"
     depends_on:
-      - data-service  # Ensures data-service starts first
+      - data-service 
     env_file: coreservices\myenv.env
     networks:
       - app-network
